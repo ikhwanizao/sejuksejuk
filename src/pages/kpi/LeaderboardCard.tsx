@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Trophy, Award } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
@@ -7,8 +8,13 @@ import { EmptyState } from "@/components/common/EmptyState";
 import { formatMyr } from "@/lib/format";
 import { useKpiLeaderboard } from "@/api/kpi";
 import type { KpiMetric, KpiRange } from "@/types/api";
+import type React from "react";
 
-const MEDAL: Record<number, string> = { 1: "🥇", 2: "🥈", 3: "🥉" };
+const RANK_ICON: Record<number, React.ReactNode> = {
+  1: <Trophy className="size-4 text-yellow-500" />,
+  2: <Award className="size-4 text-slate-400" />,
+  3: <Award className="size-4 text-amber-700" />,
+};
 
 interface LeaderboardCardProps {
   range: KpiRange;
@@ -96,7 +102,9 @@ export function LeaderboardCard({ range }: LeaderboardCardProps) {
                 <li key={row.technician_id} className="flex items-start gap-3">
                   {/* Rank badge */}
                   <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-semibold">
-                    {MEDAL[row.rank] ?? `#${row.rank}`}
+                    {RANK_ICON[row.rank] ?? (
+                      <span className="text-sm font-semibold">#{row.rank}</span>
+                    )}
                   </span>
 
                   {/* Name + bar */}
