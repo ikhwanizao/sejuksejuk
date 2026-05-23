@@ -67,7 +67,8 @@ export default function OrderDetailPage() {
   if (isError || !order) return <ErrorState onRetry={() => refetch()} />;
 
   const canAssign =
-    role === "admin" && ["new", "assigned"].includes(order.status);
+    role === "admin" &&
+    ["new", "assigned", "in_progress"].includes(order.status);
   const canReview =
     (role === "admin" || role === "manager") && order.status === "job_done";
   const canClose =
@@ -133,7 +134,8 @@ export default function OrderDetailPage() {
               size="sm"
               onClick={() => setAssignOpen(true)}
             >
-              <UserPlus className="mr-2 size-4" /> Assign
+              <UserPlus className="mr-2 size-4" />{" "}
+              {order.assigned_technician ? "Reassign" : "Assign"}
             </Button>
           )}
           {canReview && (
@@ -434,6 +436,7 @@ export default function OrderDetailPage() {
 
       {/* Dialogs */}
       <AssignTechnicianDialog
+        key={`${order.id}-${order.assigned_technician?.id ?? "none"}`}
         orderId={order.id}
         open={assignOpen}
         onOpenChange={setAssignOpen}

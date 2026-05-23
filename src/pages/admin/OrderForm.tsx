@@ -124,14 +124,14 @@ export function OrderForm({
         )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-1.5">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(11rem,0.75fr)] sm:gap-6">
+        <div className="min-w-0 space-y-1.5">
           <Label>Service Type</Label>
           <Select
             value={watchedServiceTypeId}
             onValueChange={(v) => setValue("service_type_id", v)}
           >
-            <SelectTrigger>
+            <SelectTrigger className="w-full min-w-0">
               <SelectValue placeholder="Select service…" />
             </SelectTrigger>
             <SelectContent>
@@ -144,7 +144,7 @@ export function OrderForm({
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-1.5">
+        <div className="min-w-0 space-y-1.5">
           <Label htmlFor="quoted_price">Quoted Price (RM) *</Label>
           <Input
             id="quoted_price"

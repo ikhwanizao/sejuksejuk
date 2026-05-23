@@ -1,6 +1,7 @@
 from django.db import transaction
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -95,21 +96,41 @@ class OrderViewSet(viewsets.ModelViewSet):
         ser = AssignSerializer(data=request.data)
         ser.is_valid(raise_exception=True)
         technician = ser.validated_data["technician_id"]
-        validate_transition(order.status, "assigned")
         from_status = order.status
+        previous_technician = order.assigned_technician
+
+        if from_status == "new":
+            validate_transition(order.status, "assigned")
+            to_status = "assigned"
+            event_type = OrderEvent.EventType.STATUS_CHANGE
+            note = f"Assigned to {technician.username}"
+            update_fields = ["assigned_technician", "status", "updated_at"]
+        elif from_status in {"assigned", "in_progress"}:
+            to_status = from_status
+            event_type = OrderEvent.EventType.NOTE
+            previous = previous_technician.username if previous_technician else "unassigned"
+            note = f"Reassigned from {previous} to {technician.username}"
+            update_fields = ["assigned_technician", "updated_at"]
+        else:
+            raise ValidationError("Technician can only be assigned before the job is done.")
+
         with transaction.atomic():
             order.assigned_technician = technician
-            order.status = "assigned"
-            order.save(update_fields=["assigned_technician", "status", "updated_at"])
+            order.status = to_status
+            order.save(update_fields=update_fields)
             OrderEvent.objects.create(
                 order=order,
-                event_type=OrderEvent.EventType.STATUS_CHANGE,
+                event_type=event_type,
                 from_status=from_status,
-                to_status="assigned",
+                to_status=to_status,
                 actor=request.user,
-                note=f"Assigned to {technician.username}",
+                note=note,
             )
-        record_action(request.user, "order_assigned", order)
+        record_action(
+            request.user,
+            "order_reassigned" if previous_technician else "order_assigned",
+            order,
+        )
         return Response(OrderDetailSerializer(order).data)
 
     @action(detail=True, methods=["post"])

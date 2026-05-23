@@ -71,9 +71,10 @@ export function useAssignOrder(id: number) {
       api
         .post<Order>(`/orders/${id}/assign/`, { technician_id: technicianId })
         .then((r) => r.data),
-    onSuccess: () => {
+    onSuccess: (updatedOrder) => {
+      qc.setQueryData(["order", String(id)], updatedOrder);
       qc.invalidateQueries({ queryKey: ["orders"] });
-      qc.invalidateQueries({ queryKey: ["order", id] });
+      qc.invalidateQueries({ queryKey: ["order", String(id)] });
     },
   });
 }

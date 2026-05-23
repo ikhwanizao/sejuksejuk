@@ -37,15 +37,22 @@ export function AssignTechnicianDialog({
   );
   const { data: technicians, isLoading } = useTechnicians();
   const assign = useAssignOrder(orderId);
+  const isReassigning = !!currentTechnicianId;
 
   async function handleAssign() {
     if (!selectedId) return;
     try {
       await assign.mutateAsync(Number(selectedId));
-      toast.success("Technician assigned");
+      toast.success(
+        isReassigning ? "Technician reassigned" : "Technician assigned",
+      );
       onOpenChange(false);
     } catch {
-      toast.error("Failed to assign technician");
+      toast.error(
+        isReassigning
+          ? "Failed to reassign technician"
+          : "Failed to assign technician",
+      );
     }
   }
 
@@ -53,7 +60,9 @@ export function AssignTechnicianDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Assign Technician</DialogTitle>
+          <DialogTitle>
+            {isReassigning ? "Reassign Technician" : "Assign Technician"}
+          </DialogTitle>
         </DialogHeader>
         <div className="space-y-3 py-2">
           <Label>Select technician</Label>
@@ -87,9 +96,19 @@ export function AssignTechnicianDialog({
           </Button>
           <Button
             onClick={handleAssign}
-            disabled={!selectedId || assign.isPending}
+            disabled={
+              !selectedId ||
+              selectedId === String(currentTechnicianId) ||
+              assign.isPending
+            }
           >
-            {assign.isPending ? "Assigning…" : "Assign"}
+            {assign.isPending
+              ? isReassigning
+                ? "Reassigning…"
+                : "Assigning…"
+              : isReassigning
+                ? "Reassign"
+                : "Assign"}
           </Button>
         </DialogFooter>
       </DialogContent>
