@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import NotificationBell from "@/components/layout/NotificationBell";
 
 export default function TopBar() {
   const { user, logout } = useAuthStore();
@@ -39,6 +40,8 @@ export default function TopBar() {
       </Link>
 
       <div className="flex-1" />
+
+      <NotificationBell />
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>

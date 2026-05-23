@@ -190,3 +190,13 @@ export interface Notification {
   notification_status: NotificationStatus;
   created_at: string;
 }
+
+export interface InAppNotification {
+  id: number;
+  message: string;
+  order_no: string;
+  order_id: number;
+  recipient_type: RecipientType;
+  is_read: boolean;
+  created_at: string;
+}

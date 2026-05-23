@@ -17,16 +17,24 @@ class Notification(models.Model):
     order = models.ForeignKey(
         "orders.Order", on_delete=models.CASCADE, related_name="notifications"
     )
+    recipient_user = models.ForeignKey(
+        "accounts.User",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="notifications",
+    )
     channel = models.CharField(max_length=20, choices=Channel.choices, default=Channel.WHATSAPP)
     recipient_type = models.CharField(max_length=20, choices=RecipientType.choices)
-    recipient_phone = models.CharField(max_length=20)
+    recipient_phone = models.CharField(max_length=20, blank=True)
     message = models.TextField()
-    deep_link_url = models.TextField()
+    deep_link_url = models.TextField(blank=True)
     notification_status = models.CharField(
         max_length=20,
         choices=NotificationStatus.choices,
         default=NotificationStatus.GENERATED,
     )
+    is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

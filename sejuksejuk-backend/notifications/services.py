@@ -76,40 +76,62 @@ class NotificationService:
         )
         created.append(notif)
 
-        # Manager notification (if technician has a branch manager)
+        # Manager notification (if technician has a branch manager) + all admins
+        from accounts.models import User
+        notified_ids = set()
+
         if order.assigned_technician and order.assigned_technician.branch:
-            from accounts.models import User
             managers = User.objects.filter(
                 role="manager", branch=order.assigned_technician.branch
             )
             for manager in managers:
-                if manager.phone:
-                    mgr_msg = cls.MANAGER_TEMPLATE.format(
-                        order_no=order.order_no,
-                        customer_name=order.customer_name,
-                        technician_name=tech_name,
-                        time=time_str,
-                    )
-                    mgr_url = cls.provider.build(manager.phone, mgr_msg)
-                    notif = Notification.objects.create(
-                        order=order,
-                        recipient_type=Notification.RecipientType.MANAGER,
-                        recipient_phone=manager.phone,
-                        message=mgr_msg,
-                        deep_link_url=mgr_url,
-                    )
-                    created.append(notif)
+                mgr_msg = cls.MANAGER_TEMPLATE.format(
+                    order_no=order.order_no,
+                    customer_name=order.customer_name,
+                    technician_name=tech_name,
+                    time=time_str,
+                )
+                mgr_url = cls.provider.build(manager.phone, mgr_msg) if manager.phone else ""
+                notif = Notification.objects.create(
+                    order=order,
+                    recipient_type=Notification.RecipientType.MANAGER,
+                    recipient_phone=manager.phone or "",
+                    message=mgr_msg,
+                    deep_link_url=mgr_url,
+                    recipient_user=manager,
+                )
+                created.append(notif)
+                notified_ids.add(manager.pk)
+
+        # Admin notifications
+        for admin_user in User.objects.filter(role="admin").exclude(pk__in=notified_ids):
+            admin_msg = cls.MANAGER_TEMPLATE.format(
+                order_no=order.order_no,
+                customer_name=order.customer_name,
+                technician_name=tech_name,
+                time=time_str,
+            )
+            admin_url = cls.provider.build(admin_user.phone, admin_msg) if admin_user.phone else ""
+            notif = Notification.objects.create(
+                order=order,
+                recipient_type=Notification.RecipientType.MANAGER,
+                recipient_phone=admin_user.phone or "",
+                message=admin_msg,
+                deep_link_url=admin_url,
+                recipient_user=admin_user,
+            )
+            created.append(notif)
 
         return created
 
     @classmethod
     def notify_technician_assigned(cls, order) -> "Notification | None":
         """
-        Generate a WhatsApp deep-link notification for the assigned technician.
-        Returns the Notification instance, or None if the technician has no phone number.
+        Generate a WhatsApp deep-link + in-app notification for the assigned technician.
+        Returns the Notification instance, or None if no technician is assigned.
         """
         technician = order.assigned_technician
-        if not technician or not technician.phone:
+        if not technician:
             return None
         service_name = order.service_type.name if order.service_type else "Service"
         tech_name = technician.get_full_name() or technician.username
@@ -120,13 +142,12 @@ class NotificationService:
             customer_address=order.customer_address,
             service_type=service_name,
         )
-        url = cls.provider.build(technician.phone, msg)
-        if not url:
-            return None
+        url = cls.provider.build(technician.phone, msg) if technician.phone else ""
         return Notification.objects.create(
             order=order,
             recipient_type=Notification.RecipientType.TECHNICIAN,
-            recipient_phone=technician.phone,
+            recipient_phone=technician.phone or "",
             message=msg,
             deep_link_url=url,
+            recipient_user=technician,
         )

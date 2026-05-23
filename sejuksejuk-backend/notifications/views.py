@@ -21,6 +21,15 @@ class NotificationSerializer(drf_serializers.ModelSerializer):
         ]
 
 
+class InboxNotificationSerializer(drf_serializers.ModelSerializer):
+    order_no = drf_serializers.CharField(source="order.order_no", read_only=True)
+    order_id = drf_serializers.IntegerField(source="order.id", read_only=True)
+
+    class Meta:
+        model = Notification
+        fields = ["id", "message", "order_no", "order_id", "recipient_type", "is_read", "created_at"]
+
+
 class NotificationListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -41,3 +50,47 @@ class NotificationRegenerateView(APIView):
         order = get_object_or_404(Order, pk=order_pk)
         notifications = NotificationService.notify_job_done(order)
         return Response(NotificationSerializer(notifications, many=True).data, status=201)
+
+
+class InboxView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses=InboxNotificationSerializer(many=True))
+    def get(self, request):
+        notifications = (
+            Notification.objects
+            .filter(recipient_user=request.user)
+            .select_related("order")
+            .order_by("-created_at")[:50]
+        )
+        return Response(InboxNotificationSerializer(notifications, many=True).data)
+
+
+class MarkReadView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(request=None, responses={200: {"type": "object", "properties": {"marked_read": {"type": "integer"}}}})
+    def post(self, request):
+        count = Notification.objects.filter(
+            recipient_user=request.user, is_read=False
+        ).update(is_read=True)
+        return Response({"marked_read": count})
+
+
+class ClearAllView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(request=None, responses={200: {"type": "object", "properties": {"deleted": {"type": "integer"}}}})
+    def delete(self, request):
+        count, _ = Notification.objects.filter(recipient_user=request.user).delete()
+        return Response({"deleted": count})
+
+
+class ClearOneView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(request=None, responses={204: None})
+    def delete(self, request, pk):
+        notif = get_object_or_404(Notification, pk=pk, recipient_user=request.user)
+        notif.delete()
+        return Response(status=204)
