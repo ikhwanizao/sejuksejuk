@@ -1,6 +1,9 @@
 from urllib.parse import quote
+from zoneinfo import ZoneInfo
 from django.utils import timezone
 from .models import Notification
+
+_MYT = ZoneInfo("Asia/Kuala_Lumpur")
 
 
 class WhatsAppDeepLinkProvider:
@@ -8,10 +11,13 @@ class WhatsAppDeepLinkProvider:
 
     @staticmethod
     def build(phone: str, message: str) -> str:
-        # Strip non-digit chars except leading +; normalise to digits only
+        # Strip non-digit chars; normalise to digits only
         digits = "".join(c for c in phone if c.isdigit())
         if not digits:
             return ""
+        # Convert Malaysian local format (leading 0) to international (60...)
+        if digits.startswith("0"):
+            digits = "60" + digits[1:]
         encoded = quote(message, safe="")
         return f"https://wa.me/{digits}?text={encoded}"
 
@@ -36,7 +42,7 @@ class NotificationService:
         Generate customer + manager WhatsApp deep-link notifications.
         Returns a list of Notification instances created.
         """
-        time_str = timezone.now().strftime("%d %b %Y %H:%M")
+        time_str = timezone.now().astimezone(_MYT).strftime("%d %b %Y %H:%M")
         tech_name = (
             order.assigned_technician.get_full_name() or order.assigned_technician.username
             if order.assigned_technician
