@@ -48,6 +48,7 @@ export default function OrdersListPage() {
   const [status, setStatus] = useState("all");
   const [technicianId, setTechnicianId] = useState("all");
   const [serviceTypeId, setServiceTypeId] = useState("all");
+  const [hasPayment, setHasPayment] = useState("all");
   const [page, setPage] = useState(1);
 
   const { data, isLoading, isError, refetch } = useOrders({
@@ -56,6 +57,7 @@ export default function OrdersListPage() {
     assigned_technician:
       technicianId === "all" ? undefined : Number(technicianId),
     service_type: serviceTypeId === "all" ? undefined : Number(serviceTypeId),
+    has_payment: hasPayment === "all" ? undefined : hasPayment === "true",
     page,
   });
 
@@ -157,6 +159,23 @@ export default function OrdersListPage() {
             </SelectContent>
           </Select>
         )}
+
+        <Select
+          value={hasPayment}
+          onValueChange={(v) => {
+            setHasPayment(v);
+            setPage(1);
+          }}
+        >
+          <SelectTrigger className="h-9 w-40">
+            <SelectValue placeholder="Payment" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All payments</SelectItem>
+            <SelectItem value="true">Paid</SelectItem>
+            <SelectItem value="false">Unpaid</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Desktop table */}

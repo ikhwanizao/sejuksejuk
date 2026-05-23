@@ -20,6 +20,7 @@ export interface OrderFilters {
   ordering?: string;
   created_after?: string;
   created_before?: string;
+  has_payment?: boolean;
   page?: number;
 }
 

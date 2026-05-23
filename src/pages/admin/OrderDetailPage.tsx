@@ -7,6 +7,7 @@ import {
   CheckCircle,
   XCircle,
   Pencil,
+  CreditCard,
 } from "lucide-react";
 import { format } from "date-fns";
 import {
@@ -16,6 +17,7 @@ import {
   useUpdateOrder,
 } from "@/api/orders";
 import { useReport } from "@/api/reports";
+import { useCreatePayment } from "@/api/payments";
 import {
   useOrderNotifications,
   useRegenerateNotifications,
@@ -41,7 +43,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { OrderStatus } from "@/types/api";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { OrderStatus, PaymentMethod } from "@/types/api";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 
 export default function OrderDetailPage() {
@@ -62,6 +73,31 @@ export default function OrderDetailPage() {
   const reviewOrder = useReviewOrder(Number(id));
   const closeOrder = useCloseOrder(Number(id));
   const updateOrder = useUpdateOrder(Number(id));
+
+  const reportId = report?.id ?? 0;
+  const createPayment = useCreatePayment(reportId, Number(id));
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
+
+  const canRecordPayment =
+    report && !report.payment && ["admin", "manager"].includes(role ?? "");
+
+  async function handleRecordPayment() {
+    if (!paymentAmount) {
+      toast.error("Please enter an amount");
+      return;
+    }
+    try {
+      await createPayment.mutateAsync({
+        amount: paymentAmount,
+        method: paymentMethod,
+      });
+      toast.success("Payment recorded");
+      setPaymentAmount("");
+    } catch {
+      toast.error("Failed to record payment");
+    }
+  }
 
   if (isLoading) return <PageSkeleton rows={4} />;
   if (isError || !order) return <ErrorState onRetry={() => refetch()} />;
@@ -348,7 +384,7 @@ export default function OrderDetailPage() {
                     <span>Final amount</span>
                     <span>RM {parseFloat(report.final_amount).toFixed(2)}</span>
                   </div>
-                  {report.payment && (
+                  {report.payment ? (
                     <>
                       <Separator />
                       <div className="flex justify-between text-green-700">
@@ -358,9 +394,71 @@ export default function OrderDetailPage() {
                         </span>
                       </div>
                     </>
+                  ) : (
+                    <>
+                      <Separator />
+                      <div className="flex justify-between text-amber-600 text-xs font-medium">
+                        <span>Payment not recorded</span>
+                      </div>
+                    </>
                   )}
                 </CardContent>
               </Card>
+
+              {canRecordPayment && (
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-muted-foreground flex items-center gap-2">
+                      <CreditCard className="size-4" />
+                      Record Payment
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-[minmax(0,1fr)_minmax(10rem,0.75fr)] gap-3">
+                      <div className="space-y-1 min-w-0">
+                        <Label className="text-xs">Amount (RM)</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder={parseFloat(report.final_amount).toFixed(
+                            2,
+                          )}
+                          value={paymentAmount}
+                          onChange={(e) => setPaymentAmount(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-1 min-w-0">
+                        <Label className="text-xs">Method</Label>
+                        <Select
+                          value={paymentMethod}
+                          onValueChange={(v) =>
+                            setPaymentMethod(v as PaymentMethod)
+                          }
+                        >
+                          <SelectTrigger className="w-full min-w-0">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="cash">Cash</SelectItem>
+                            <SelectItem value="transfer">Transfer</SelectItem>
+                            <SelectItem value="card">Card</SelectItem>
+                            <SelectItem value="ewallet">E-Wallet</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={handleRecordPayment}
+                      disabled={createPayment.isPending}
+                    >
+                      <CreditCard className="mr-2 size-4" />
+                      {createPayment.isPending ? "Saving..." : "Record Payment"}
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
 
               {report.attachments.length > 0 && (
                 <Card>
