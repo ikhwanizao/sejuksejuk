@@ -1,10 +1,19 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { ArrowLeft, Upload, X, CheckCircle2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Upload,
+  X,
+  CheckCircle2,
+  Loader2,
+  Image as ImageIcon,
+  FileText,
+  Film,
+} from "lucide-react";
 import { useOrder, useCompleteOrder } from "@/api/orders";
 import {
   useReport,
@@ -30,7 +39,6 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Progress } from "@/components/ui/progress";
 import type { PaymentMethod } from "@/types/api";
 
 const workSchema = z.object({
@@ -46,9 +54,26 @@ const paymentSchema = z.object({
 
 type WorkValues = z.infer<typeof workSchema>;
 type PaymentValues = z.infer<typeof paymentSchema>;
+type UploadStatus = "uploading" | "uploaded" | "failed";
+type UploadingFile = {
+  id: string;
+  name: string;
+  type: string;
+  status: UploadStatus;
+  baseAttachmentCount: number;
+  previewUrl?: string;
+};
+
+function UploadingFileIcon({ type }: { type: string }) {
+  if (type.startsWith("image/")) return <ImageIcon className="size-5" />;
+  if (type.startsWith("video/")) return <Film className="size-5" />;
+  return <FileText className="size-5" />;
+}
 
 const MAX_FILES = 10;
 const MAX_SIZE_MB = 10;
+const MIN_UPLOAD_FEEDBACK_MS = 900;
+const UPLOAD_RESULT_FEEDBACK_MS = 700;
 const ALLOWED_MIME = [
   "image/jpeg",
   "image/png",
@@ -66,6 +91,7 @@ export default function CompleteJobPage() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [done, setDone] = useState(false);
   const [paymentReceipt, setPaymentReceipt] = useState<File | null>(null);
+  const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
 
   const { data: order, isLoading, isError } = useOrder(id);
   const { data: report } = useReport(id);
@@ -73,8 +99,8 @@ export default function CompleteJobPage() {
 
   const reportId = report?.id ?? 0;
   const completeOrder = useCompleteOrder(orderId);
-  const uploadAttachment = useUploadAttachment(reportId);
-  const deleteAttachment = useDeleteAttachment(reportId);
+  const uploadAttachment = useUploadAttachment(reportId, id);
+  const deleteAttachment = useDeleteAttachment(reportId, id);
   const createPayment = useCreatePayment(reportId, orderId);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -105,6 +131,26 @@ export default function CompleteJobPage() {
   const finalAmount = quotedPrice + extraCharges;
 
   const attachments = report?.attachments ?? [];
+  const isUploadingAttachments = uploadingFiles.some(
+    (file) => file.status === "uploading",
+  );
+  const visibleAttachmentLimit =
+    uploadingFiles.length > 0
+      ? Math.min(...uploadingFiles.map((file) => file.baseAttachmentCount))
+      : attachments.length;
+  const visibleAttachments = attachments.slice(0, visibleAttachmentLimit);
+  const displayedAttachmentCount =
+    visibleAttachments.length + uploadingFiles.length;
+
+  const uploadPreviewUrlsRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    const uploadPreviewUrls = uploadPreviewUrlsRef.current;
+    return () => {
+      uploadPreviewUrls.forEach((url) => URL.revokeObjectURL(url));
+      uploadPreviewUrls.clear();
+    };
+  }, []);
 
   if (isLoading) return <PageSkeleton rows={3} />;
   if (isError || !order) return <ErrorState />;
@@ -130,9 +176,17 @@ export default function CompleteJobPage() {
   }
 
   // ── Step 2: Attachments ──────────────────────────────────────────────────
+  function releaseUploadPreview(previewUrl?: string) {
+    if (!previewUrl) return;
+    URL.revokeObjectURL(previewUrl);
+    uploadPreviewUrlsRef.current.delete(previewUrl);
+  }
+
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
     e.target.value = "";
+
+    const acceptedFiles: File[] = [];
 
     for (const file of files) {
       if (!ALLOWED_MIME.includes(file.type)) {
@@ -143,14 +197,76 @@ export default function CompleteJobPage() {
         toast.error(`${file.name}: exceeds ${MAX_SIZE_MB}MB limit`);
         continue;
       }
-      if (attachments.length >= MAX_FILES) {
+      if (attachments.length + acceptedFiles.length >= MAX_FILES) {
         toast.error(`Maximum ${MAX_FILES} files allowed`);
         break;
       }
+      acceptedFiles.push(file);
+    }
+
+    const queuedFiles = acceptedFiles.map((file, index) => {
+      const previewUrl = file.type.startsWith("image/")
+        ? URL.createObjectURL(file)
+        : undefined;
+      if (previewUrl) uploadPreviewUrlsRef.current.add(previewUrl);
+
+      return {
+        file,
+        preview: {
+          id: `${file.name}-${file.size}-${file.lastModified}-${Date.now()}-${index}`,
+          name: file.name,
+          type: file.type,
+          status: "uploading" as const,
+          baseAttachmentCount: attachments.length,
+          previewUrl,
+        },
+      };
+    });
+
+    if (queuedFiles.length === 0) return;
+
+    setUploadingFiles((current) => [
+      ...current,
+      ...queuedFiles.map(({ preview }) => preview),
+    ]);
+
+    for (const { file, preview } of queuedFiles) {
+      const startedAt = Date.now();
       try {
         await uploadAttachment.mutateAsync(file);
+        const elapsed = Date.now() - startedAt;
+        const remainingFeedbackMs = Math.max(
+          MIN_UPLOAD_FEEDBACK_MS - elapsed,
+          0,
+        );
+        window.setTimeout(() => {
+          setUploadingFiles((current) =>
+            current.map((upload) =>
+              upload.id === preview.id
+                ? { ...upload, status: "uploaded" }
+                : upload,
+            ),
+          );
+          window.setTimeout(() => {
+            releaseUploadPreview(preview.previewUrl);
+            setUploadingFiles((current) =>
+              current.filter((upload) => upload.id !== preview.id),
+            );
+          }, UPLOAD_RESULT_FEEDBACK_MS);
+        }, remainingFeedbackMs);
       } catch {
         toast.error(`Failed to upload ${file.name}`);
+        setUploadingFiles((current) =>
+          current.map((upload) =>
+            upload.id === preview.id ? { ...upload, status: "failed" } : upload,
+          ),
+        );
+        window.setTimeout(() => {
+          releaseUploadPreview(preview.previewUrl);
+          setUploadingFiles((current) =>
+            current.filter((upload) => upload.id !== preview.id),
+          );
+        }, UPLOAD_RESULT_FEEDBACK_MS + 600);
       }
     }
   }
@@ -349,17 +465,13 @@ export default function CompleteJobPage() {
             <CardTitle className="text-base">
               Photos / Documents
               <span className="text-muted-foreground font-normal text-sm ml-2">
-                ({attachments.length}/{MAX_FILES})
+                ({displayedAttachmentCount}/{MAX_FILES})
               </span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {uploadAttachment.isPending && (
-              <Progress value={undefined} className="h-1.5" />
-            )}
-
             <div className="flex flex-wrap gap-2">
-              {attachments.map((att) => (
+              {visibleAttachments.map((att) => (
                 <div key={att.id} className="relative">
                   <FilePreview
                     url={att.file}
@@ -376,16 +488,67 @@ export default function CompleteJobPage() {
                 </div>
               ))}
 
-              {attachments.length < MAX_FILES && (
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="h-20 w-20 rounded-md border-2 border-dashed border-border flex flex-col items-center justify-center gap-1 text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+              {uploadingFiles.map((file) => (
+                <div
+                  key={file.id}
+                  className={`uploading-attachment-tile relative h-20 w-20 overflow-hidden rounded-md border bg-muted text-primary ${
+                    file.status === "failed"
+                      ? "border-destructive/40 bg-destructive/5 text-destructive"
+                      : file.status === "uploaded"
+                        ? "border-green-300 bg-green-50 text-green-700"
+                        : "border-primary/30 bg-primary/5"
+                  }`}
+                  aria-live="polite"
                 >
-                  <Upload className="size-5" />
-                  <span className="text-xs">Add</span>
-                </button>
-              )}
+                  {file.previewUrl ? (
+                    <img
+                      src={file.previewUrl}
+                      alt=""
+                      className="size-full object-cover opacity-70 transition duration-300"
+                    />
+                  ) : (
+                    <div className="flex size-full items-center justify-center">
+                      <UploadingFileIcon type={file.type} />
+                    </div>
+                  )}
+                  <div
+                    className={`absolute inset-0 z-20 flex flex-col items-center justify-center gap-1 text-xs font-medium text-white ${
+                      file.status === "failed"
+                        ? "bg-destructive/75"
+                        : file.status === "uploaded"
+                          ? "bg-green-600/70"
+                          : "bg-black/45"
+                    }`}
+                  >
+                    {file.status === "uploading" && (
+                      <Loader2 className="size-5 animate-spin" />
+                    )}
+                    {file.status === "uploaded" && (
+                      <CheckCircle2 className="size-5" />
+                    )}
+                    {file.status === "failed" && <X className="size-5" />}
+                    <span>
+                      {file.status === "uploading"
+                        ? "Uploading"
+                        : file.status === "uploaded"
+                          ? "Uploaded"
+                          : "Failed"}
+                    </span>
+                  </div>
+                </div>
+              ))}
+
+              {!isUploadingAttachments &&
+                displayedAttachmentCount < MAX_FILES && (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="h-20 w-20 rounded-md border-2 border-dashed border-border flex flex-col items-center justify-center gap-1 text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                  >
+                    <Upload className="size-5" />
+                    <span className="text-xs">Add</span>
+                  </button>
+                )}
             </div>
 
             <input
