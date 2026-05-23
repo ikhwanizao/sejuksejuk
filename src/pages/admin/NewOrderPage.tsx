@@ -13,7 +13,7 @@ export default function NewOrderPage() {
   const createOrder = useCreateOrder();
 
   async function handleSubmit(values: OrderFormValues) {
-    await createOrder.mutateAsync({
+    const order = await createOrder.mutateAsync({
       customer_name: values.customer_name,
       customer_phone: values.customer_phone,
       customer_address: values.customer_address,
@@ -26,8 +26,8 @@ export default function NewOrderPage() {
       admin_notes: values.admin_notes ?? "",
     });
     toast.success("Order created successfully");
-    // Navigate to the order list; the created order will appear at top
-    navigate("/orders");
+    // Navigate to the new order's detail page to show the order summary
+    navigate(`/orders/${order.id}`);
   }
 
   return (
