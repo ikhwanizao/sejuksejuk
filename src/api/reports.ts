@@ -6,7 +6,13 @@ export function useReport(orderId: number | string | undefined) {
   return useQuery({
     queryKey: ["report", orderId],
     queryFn: () =>
-      api.get<ServiceReport>(`/orders/${orderId}/report/`).then((r) => r.data),
+      api
+        .get<ServiceReport>(`/orders/${orderId}/report/`)
+        .then((r) => r.data)
+        .catch((err) => {
+          if (err?.response?.status === 404) return null;
+          throw err;
+        }),
     enabled: !!orderId,
     retry: false,
   });

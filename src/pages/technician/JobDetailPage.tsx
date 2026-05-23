@@ -21,7 +21,10 @@ export default function JobDetailPage() {
   const navigate = useNavigate();
 
   const { data: order, isLoading, isError, refetch } = useOrder(id);
-  const { data: report } = useReport(id);
+  const isCompleted = ["job_done", "reviewed", "closed"].includes(
+    order?.status ?? "",
+  );
+  const { data: report } = useReport(isCompleted ? id : undefined);
   const { data: notifications } = useOrderNotifications(id);
   const startOrder = useStartOrder(Number(id));
 

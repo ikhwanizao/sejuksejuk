@@ -1,4 +1,4 @@
-import { Link } from "react-router";
+import { useNavigate } from "react-router";
 import { useOrders } from "@/api/orders";
 import { useAuthStore } from "@/stores/auth";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -23,8 +23,12 @@ const STATUS_GROUPS: { key: string; label: string; statuses: OrderStatus[] }[] =
   ];
 
 function JobCard({ order }: { order: Order }) {
+  const navigate = useNavigate();
   return (
-    <Link to={`/jobs/${order.id}`}>
+    <div
+      onClick={() => navigate(`/jobs/${order.id}`)}
+      className="cursor-pointer"
+    >
       <Card className="hover:bg-muted/30 transition-colors">
         <CardContent className="p-4 space-y-2">
           <div className="flex items-start justify-between gap-2">
@@ -55,7 +59,7 @@ function JobCard({ order }: { order: Order }) {
           </div>
         </CardContent>
       </Card>
-    </Link>
+    </div>
   );
 }
 
