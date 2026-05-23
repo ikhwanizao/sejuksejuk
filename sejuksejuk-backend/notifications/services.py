@@ -36,6 +36,14 @@ class NotificationService:
         "Technician {technician_name} at {time}. Please review."
     )
 
+    TECHNICIAN_ASSIGNED_TEMPLATE = (
+        "Hi {technician_name},\n"
+        "You have been assigned to job {order_no} for {customer_name}.\n"
+        "Address: {customer_address}\n"
+        "Service: {service_type}\n"
+        "Please proceed accordingly. Thank you!"
+    )
+
     @classmethod
     def notify_job_done(cls, order) -> list:
         """
@@ -93,3 +101,32 @@ class NotificationService:
                     created.append(notif)
 
         return created
+
+    @classmethod
+    def notify_technician_assigned(cls, order) -> "Notification | None":
+        """
+        Generate a WhatsApp deep-link notification for the assigned technician.
+        Returns the Notification instance, or None if the technician has no phone number.
+        """
+        technician = order.assigned_technician
+        if not technician or not technician.phone:
+            return None
+        service_name = order.service_type.name if order.service_type else "Service"
+        tech_name = technician.get_full_name() or technician.username
+        msg = cls.TECHNICIAN_ASSIGNED_TEMPLATE.format(
+            technician_name=tech_name,
+            order_no=order.order_no,
+            customer_name=order.customer_name,
+            customer_address=order.customer_address,
+            service_type=service_name,
+        )
+        url = cls.provider.build(technician.phone, msg)
+        if not url:
+            return None
+        return Notification.objects.create(
+            order=order,
+            recipient_type=Notification.RecipientType.TECHNICIAN,
+            recipient_phone=technician.phone,
+            message=msg,
+            deep_link_url=url,
+        )

@@ -7,6 +7,7 @@ from rest_framework.response import Response
 
 from accounts.permissions import IsAdmin, IsManagerOrAdmin, IsAssignedTechnician
 from audit.utils import record_action
+from notifications.services import NotificationService
 from .filters import OrderFilter
 from .models import Order, OrderEvent, ServiceType
 from .serializers import (
@@ -131,6 +132,7 @@ class OrderViewSet(viewsets.ModelViewSet):
             "order_reassigned" if previous_technician else "order_assigned",
             order,
         )
+        NotificationService.notify_technician_assigned(order)
         return Response(OrderDetailSerializer(order).data)
 
     @action(detail=True, methods=["post"])

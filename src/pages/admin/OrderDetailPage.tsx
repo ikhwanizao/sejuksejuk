@@ -61,6 +61,7 @@ export default function OrderDetailPage() {
   const role = useAuthStore((s) => s.user?.role);
 
   const [assignOpen, setAssignOpen] = useState(false);
+  const [assignKey, setAssignKey] = useState(0);
   const [editOpen, setEditOpen] = useState(false);
   const [reviewConfirm, setReviewConfirm] = useState(false);
   const [closeConfirm, setCloseConfirm] = useState(false);
@@ -168,7 +169,10 @@ export default function OrderDetailPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setAssignOpen(true)}
+              onClick={() => {
+                setAssignKey((k) => k + 1);
+                setAssignOpen(true);
+              }}
             >
               <UserPlus className="mr-2 size-4" />{" "}
               {order.assigned_technician ? "Reassign" : "Assign"}
@@ -506,7 +510,7 @@ export default function OrderDetailPage() {
             {!notifications || notifications.length === 0 ? (
               <EmptyState
                 title="No notifications"
-                description="Notifications are generated when the job is marked as done."
+                description="Notifications are generated when a technician is assigned and when the job is marked as done."
               />
             ) : (
               notifications.map((n) => (
@@ -534,7 +538,7 @@ export default function OrderDetailPage() {
 
       {/* Dialogs */}
       <AssignTechnicianDialog
-        key={`${order.id}-${order.assigned_technician?.id ?? "none"}`}
+        key={assignKey}
         orderId={order.id}
         open={assignOpen}
         onOpenChange={setAssignOpen}
