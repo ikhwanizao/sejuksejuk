@@ -172,3 +172,5 @@ AI_PROVIDER = config('AI_PROVIDER', default='mock')
 OPENAI_API_KEY = config('OPENAI_API_KEY', default='')
 GEMINI_API_KEY = config('GEMINI_API_KEY', default='')
 CLAUDE_API_KEY = config('CLAUDE_API_KEY', default='')
+
+STATIC_ROOT = BASE_DIR / 'staticfiles'  
