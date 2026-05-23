@@ -27,6 +27,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export default function LoginPage() {
+  "use no memo";
   const navigate = useNavigate();
   const { setTokens, setUser } = useAuthStore();
   const login = useLogin();

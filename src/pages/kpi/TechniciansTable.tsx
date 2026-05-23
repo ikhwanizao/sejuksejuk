@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -35,6 +35,32 @@ function ChevronIcon({ dir }: { dir: SortDir }) {
   );
 }
 
+function SortHead({
+  colKey,
+  children,
+  className,
+  activeSortKey,
+  activeSortDir,
+  onSort,
+}: {
+  colKey: SortKey;
+  children: React.ReactNode;
+  className?: string;
+  activeSortKey: SortKey;
+  activeSortDir: SortDir;
+  onSort: (key: SortKey) => void;
+}) {
+  return (
+    <TableHead
+      className={cn("cursor-pointer select-none whitespace-nowrap", className)}
+      onClick={() => onSort(colKey)}
+    >
+      {children}
+      {activeSortKey === colKey && <ChevronIcon dir={activeSortDir} />}
+    </TableHead>
+  );
+}
+
 interface TechniciansTableProps {
   range: KpiRange;
 }
@@ -45,7 +71,7 @@ export function TechniciansTable({ range }: TechniciansTableProps) {
   const [sortKey, setSortKey] = useState<SortKey>("jobs_completed");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
-  const rows = data?.technicians ?? [];
+  const rows = useMemo(() => data?.technicians ?? [], [data?.technicians]);
 
   const sorted = useMemo(() => {
     return [...rows].sort((a, b) => {
@@ -61,37 +87,17 @@ export function TechniciansTable({ range }: TechniciansTableProps) {
     });
   }, [rows, sortKey, sortDir]);
 
-  function handleSort(key: SortKey) {
-    if (key === sortKey) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    } else {
-      setSortKey(key);
-      setSortDir("desc");
-    }
-  }
-
-  function SortHead({
-    colKey,
-    children,
-    className,
-  }: {
-    colKey: SortKey;
-    children: React.ReactNode;
-    className?: string;
-  }) {
-    return (
-      <TableHead
-        className={cn(
-          "cursor-pointer select-none whitespace-nowrap",
-          className,
-        )}
-        onClick={() => handleSort(colKey)}
-      >
-        {children}
-        {sortKey === colKey && <ChevronIcon dir={sortDir} />}
-      </TableHead>
-    );
-  }
+  const handleSort = useCallback(
+    (key: SortKey) => {
+      if (key === sortKey) {
+        setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+      } else {
+        setSortKey(key);
+        setSortDir("desc");
+      }
+    },
+    [sortKey],
+  );
 
   return (
     <Card>
@@ -136,14 +142,39 @@ export function TechniciansTable({ range }: TechniciansTableProps) {
           <Table>
             <TableHeader>
               <TableRow>
-                <SortHead colKey="technician_name">Technician</SortHead>
-                <SortHead colKey="jobs_completed" className="text-right">
+                <SortHead
+                  colKey="technician_name"
+                  activeSortKey={sortKey}
+                  activeSortDir={sortDir}
+                  onSort={handleSort}
+                >
+                  Technician
+                </SortHead>
+                <SortHead
+                  colKey="jobs_completed"
+                  className="text-right"
+                  activeSortKey={sortKey}
+                  activeSortDir={sortDir}
+                  onSort={handleSort}
+                >
                   Jobs
                 </SortHead>
-                <SortHead colKey="total_amount" className="text-right">
+                <SortHead
+                  colKey="total_amount"
+                  className="text-right"
+                  activeSortKey={sortKey}
+                  activeSortDir={sortDir}
+                  onSort={handleSort}
+                >
                   Revenue
                 </SortHead>
-                <SortHead colKey="reschedule_count" className="text-right">
+                <SortHead
+                  colKey="reschedule_count"
+                  className="text-right"
+                  activeSortKey={sortKey}
+                  activeSortDir={sortDir}
+                  onSort={handleSort}
+                >
                   Reschedules
                 </SortHead>
               </TableRow>

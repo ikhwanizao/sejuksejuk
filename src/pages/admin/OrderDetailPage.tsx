@@ -29,7 +29,7 @@ import { WhatsAppButton } from "@/components/common/WhatsAppButton";
 import { FilePreview } from "@/components/common/FilePreview";
 import { AssignTechnicianDialog } from "./AssignTechnicianDialog";
 import { OrderForm } from "./OrderForm";
-import type { OrderFormValues } from "./OrderForm";
+import type { OrderFormValues } from "./orderSchema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

@@ -86,8 +86,6 @@ export interface OrderCreatePayload {
   admin_notes: string;
 }
 
-export interface OrderUpdatePayload extends Partial<OrderCreatePayload> {}
-
 // ─── Service Reports ─────────────────────────────────────────────────────────
 export type AttachmentKind = "photo" | "video" | "pdf";
 export type PaymentMethod = "cash" | "transfer" | "card" | "ewallet";

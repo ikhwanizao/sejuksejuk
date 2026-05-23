@@ -1,8 +1,8 @@
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { useServiceTypes } from "@/api/serviceTypes";
+import { orderSchema, type OrderFormValues } from "./orderSchema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,18 +15,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { Order } from "@/types/api";
-
-export const orderSchema = z.object({
-  customer_name: z.string().min(1, "Required"),
-  customer_phone: z.string().min(1, "Required"),
-  customer_address: z.string().min(1, "Required"),
-  problem_description: z.string().min(1, "Required"),
-  service_type_id: z.string().optional(),
-  quoted_price: z.string().min(1, "Required"),
-  admin_notes: z.string().optional(),
-});
-
-export type OrderFormValues = z.infer<typeof orderSchema>;
 
 interface OrderFormProps {
   defaultValues?: Partial<OrderFormValues>;
@@ -43,13 +31,14 @@ export function OrderForm({
   submitLabel = "Save",
   isSubmitting,
 }: OrderFormProps) {
+  "use no memo";
   const { data: serviceTypes } = useServiceTypes();
 
   const {
     register,
     handleSubmit,
     setValue,
-    watch,
+    control,
     formState: { errors },
   } = useForm<OrderFormValues>({
     resolver: zodResolver(orderSchema),
@@ -69,7 +58,7 @@ export function OrderForm({
     },
   });
 
-  const watchedServiceTypeId = watch("service_type_id");
+  const watchedServiceTypeId = useWatch({ control, name: "service_type_id" });
 
   // Auto-fill quoted price from service type default
   useEffect(() => {

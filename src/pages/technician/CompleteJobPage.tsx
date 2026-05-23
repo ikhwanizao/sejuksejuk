@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -58,14 +58,12 @@ const ALLOWED_MIME = [
 ];
 
 export default function CompleteJobPage() {
+  "use no memo";
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const orderId = Number(id);
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [completedReportId, setCompletedReportId] = useState<number | null>(
-    null,
-  );
   const [done, setDone] = useState(false);
   const [paymentReceipt, setPaymentReceipt] = useState<File | null>(null);
 
@@ -73,10 +71,11 @@ export default function CompleteJobPage() {
   const { data: report } = useReport(id);
   const { data: notifications } = useOrderNotifications(done ? id : undefined);
 
+  const reportId = report?.id ?? 0;
   const completeOrder = useCompleteOrder(orderId);
-  const uploadAttachment = useUploadAttachment(completedReportId ?? 0);
-  const deleteAttachment = useDeleteAttachment(completedReportId ?? 0);
-  const createPayment = useCreatePayment(completedReportId ?? 0, orderId);
+  const uploadAttachment = useUploadAttachment(reportId);
+  const deleteAttachment = useDeleteAttachment(reportId);
+  const createPayment = useCreatePayment(reportId, orderId);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -90,7 +89,18 @@ export default function CompleteJobPage() {
     defaultValues: { amount: "", method: "cash" },
   });
 
-  const extraCharges = parseFloat(workForm.watch("extra_charges") || "0") || 0;
+  const extraChargesRaw = useWatch({
+    control: workForm.control,
+    name: "extra_charges",
+    defaultValue: "0",
+  });
+  const paymentMethod = useWatch({
+    control: paymentForm.control,
+    name: "method",
+    defaultValue: "cash",
+  });
+
+  const extraCharges = parseFloat(extraChargesRaw || "0") || 0;
   const quotedPrice = parseFloat(order?.quoted_price ?? "0");
   const finalAmount = quotedPrice + extraCharges;
 
@@ -98,7 +108,7 @@ export default function CompleteJobPage() {
 
   if (isLoading) return <PageSkeleton rows={3} />;
   if (isError || !order) return <ErrorState />;
-  if (order.status !== "in_progress" && !done) {
+  if (order.status !== "in_progress" && step === 1 && !done) {
     return <ErrorState message="This job is not currently in progress." />;
   }
 
@@ -110,9 +120,6 @@ export default function CompleteJobPage() {
         extra_charges: values.extra_charges || "0",
         remarks: values.remarks || "",
       });
-      // The report id comes from the report endpoint — fetch will auto-refresh
-      // We use the order id as the key for the report query
-      setCompletedReportId(null); // report query uses orderId, set after navigate
       toast.success("Work submitted! Now add photos.");
       setStep(2);
     } catch (e: unknown) {
@@ -452,7 +459,7 @@ export default function CompleteJobPage() {
               <div className="space-y-1.5">
                 <Label>Payment Method</Label>
                 <Select
-                  value={paymentForm.watch("method")}
+                  value={paymentMethod}
                   onValueChange={(v) =>
                     paymentForm.setValue("method", v as PaymentMethod)
                   }

@@ -1,4 +1,4 @@
-from django.core.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError
 
 # Allowed transitions: current_status -> set of valid next statuses
 TRANSITIONS = {

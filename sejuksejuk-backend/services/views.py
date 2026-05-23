@@ -36,6 +36,12 @@ def complete_order(request, pk):
 
     validate_transition(order.status, "job_done")
 
+    if ServiceReport.objects.filter(order=order).exists():
+        return Response(
+            {"detail": "A service report already exists for this order."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
     ser = ServiceReportCreateSerializer(data=request.data)
     ser.is_valid(raise_exception=True)
 

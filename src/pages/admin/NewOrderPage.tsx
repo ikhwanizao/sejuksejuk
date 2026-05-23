@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 import { useCreateOrder } from "@/api/orders";
 import { OrderForm } from "./OrderForm";
-import type { OrderFormValues } from "./OrderForm";
+import type { OrderFormValues } from "./orderSchema";
 import { PageHeader } from "@/components/common/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";

@@ -8,7 +8,6 @@ import { api } from "@/lib/api";
 import type {
   Order,
   OrderCreatePayload,
-  OrderUpdatePayload,
   Paginated,
   ServiceReportCreatePayload,
 } from "@/types/api";
@@ -36,10 +35,11 @@ export function useOrders(filters?: OrderFilters) {
 }
 
 export function useOrder(id: number | string | undefined) {
+  const sid = id != null ? String(id) : undefined;
   return useQuery({
-    queryKey: ["order", id],
-    queryFn: () => api.get<Order>(`/orders/${id}/`).then((r) => r.data),
-    enabled: !!id,
+    queryKey: ["order", sid],
+    queryFn: () => api.get<Order>(`/orders/${sid}/`).then((r) => r.data),
+    enabled: !!sid,
   });
 }
 
@@ -55,7 +55,7 @@ export function useCreateOrder() {
 export function useUpdateOrder(id: number) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: OrderUpdatePayload) =>
+    mutationFn: (data: Partial<OrderCreatePayload>) =>
       api.patch<Order>(`/orders/${id}/`, data).then((r) => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["orders"] });
@@ -83,9 +83,9 @@ export function useStartOrder(id: number) {
   return useMutation({
     mutationFn: () =>
       api.post<Order>(`/orders/${id}/start/`).then((r) => r.data),
-    onSuccess: () => {
+    onSuccess: (updatedOrder) => {
+      qc.setQueryData(["order", String(id)], updatedOrder);
       qc.invalidateQueries({ queryKey: ["orders"] });
-      qc.invalidateQueries({ queryKey: ["order", id] });
     },
   });
 }
@@ -95,11 +95,11 @@ export function useCompleteOrder(id: number) {
   return useMutation({
     mutationFn: (data: ServiceReportCreatePayload) =>
       api.post<Order>(`/orders/${id}/complete/`, data).then((r) => r.data),
-    onSuccess: () => {
+    onSuccess: (updatedOrder) => {
+      qc.setQueryData(["order", String(id)], updatedOrder);
       qc.invalidateQueries({ queryKey: ["orders"] });
-      qc.invalidateQueries({ queryKey: ["order", id] });
-      qc.invalidateQueries({ queryKey: ["report", id] });
-      qc.invalidateQueries({ queryKey: ["notifications", id] });
+      qc.invalidateQueries({ queryKey: ["report", String(id)] });
+      qc.invalidateQueries({ queryKey: ["notifications", String(id)] });
     },
   });
 }
@@ -109,9 +109,9 @@ export function useReviewOrder(id: number) {
   return useMutation({
     mutationFn: () =>
       api.post<Order>(`/orders/${id}/review/`).then((r) => r.data),
-    onSuccess: () => {
+    onSuccess: (updatedOrder) => {
+      qc.setQueryData(["order", String(id)], updatedOrder);
       qc.invalidateQueries({ queryKey: ["orders"] });
-      qc.invalidateQueries({ queryKey: ["order", id] });
     },
   });
 }
@@ -121,9 +121,9 @@ export function useCloseOrder(id: number) {
   return useMutation({
     mutationFn: () =>
       api.post<Order>(`/orders/${id}/close/`).then((r) => r.data),
-    onSuccess: () => {
+    onSuccess: (updatedOrder) => {
+      qc.setQueryData(["order", String(id)], updatedOrder);
       qc.invalidateQueries({ queryKey: ["orders"] });
-      qc.invalidateQueries({ queryKey: ["order", id] });
     },
   });
 }
