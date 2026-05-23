@@ -55,13 +55,12 @@ class AIQueryView(APIView):
 
         # Build history from stored messages (last 10 turns to keep context bounded)
         history = list(
-            conversation.messages.order_by("-created_at")[:10][::-1]
-            .values("role", "content")
-        )
+            conversation.messages.order_by("-created_at")
+            .values("role", "content")[:10]
+        )[::-1]
 
-        result = run_query(question, history=history)
+        result = run_query(question, conversation_id=conversation.pk)
 
-        # Persist messages
         Message.objects.create(conversation=conversation, role="user", content=question)
         Message.objects.create(
             conversation=conversation,

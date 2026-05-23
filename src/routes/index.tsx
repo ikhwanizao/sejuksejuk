@@ -25,6 +25,9 @@ import ProfilePage from "@/pages/ProfilePage";
 // KPI Dashboard
 import KpiDashboardPage from "@/pages/kpi/KpiDashboardPage";
 
+// AI Assistant
+import AiAssistantPage from "@/pages/admin/AiAssistantPage";
+
 function RoleRedirect() {
   const user = useAuthStore((s) => s.user);
   if (!user) return <Navigate to="/login" replace />;
@@ -63,6 +66,11 @@ export default function AppRoutes() {
           {/* Admin & Manager — KPI Dashboard */}
           <Route element={<RoleGate allow={["admin", "manager"]} />}>
             <Route path="/kpi" element={<KpiDashboardPage />} />
+          </Route>
+
+          {/* Admin & Manager — AI Assistant */}
+          <Route element={<RoleGate allow={["admin", "manager"]} />}>
+            <Route path="/ai" element={<AiAssistantPage />} />
           </Route>
 
           {/* Shared routes (all authenticated roles) */}

@@ -200,3 +200,22 @@ export interface InAppNotification {
   is_read: boolean;
   created_at: string;
 }
+
+// ─── AI Assistant ─────────────────────────────────────────────────────────────
+export interface AiToolCall {
+  tool: string;
+  arguments: Record<string, unknown>;
+  result: string | null;
+}
+
+export interface AiQueryResponse {
+  conversation_id: number;
+  answer: string;
+  sources: AiToolCall[];
+}
+
+export interface AiMessage {
+  role: "user" | "assistant";
+  content: string;
+  sources?: AiToolCall[];
+}

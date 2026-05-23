@@ -1,93 +1,123 @@
 """
-AI runner: multi-turn conversation loop with tool-call support.
+AI runner: LangGraph ReAct agent with tool-calling support.
 
-Safety limits:
-  - MAX_TOOL_ITERATIONS: prevents infinite tool-call loops.
-  - Only tools in the TOOL_REGISTRY allowlist may be invoked.
+Handles persistent memory states automatically using standard LangGraph threads.
 """
-import json
+import logging
+from langchain_core.messages import HumanMessage
+from langgraph.errors import GraphRecursionError
+from langgraph.prebuilt import create_react_agent
+from langgraph.checkpoint.memory import MemorySaver
+
+logger = logging.getLogger(__name__)
+
 from .providers import get_provider
-from .tools import TOOLS, execute_tool
+from .tools import TOOLS
 
 MAX_TOOL_ITERATIONS = 5
 
 SYSTEM_PROMPT = (
-    "You are an operations assistant for Sejuk Sejuk Service, "
+    "You are Sejuk, a friendly AI assistant for Sejuk Sejuk Service, "
     "an air-conditioner service company. "
-    "Answer questions about jobs, technicians, and service records "
-    "using ONLY the provided tools to retrieve data. "
-    "Never fabricate figures. "
-    "When you have the data, give a clear, concise answer."
+    "You can chat naturally about anything, but your specialty is helping managers and admins "
+    "with operational questions — jobs, technicians, service records, and performance. "
+    "When a question needs live data, use your tools to fetch it accurately. "
+    "Never fabricate numbers or statistics. "
+    "Keep responses concise and conversational."
 )
 
+# 1. Instantiate provider and compile the agent ONCE globally to prevent re-compilation limits
+llm = get_provider()
+memory = MemorySaver()
+agent = create_react_agent(llm, tools=TOOLS, prompt=SYSTEM_PROMPT, checkpointer=memory)
 
-def run_query(question: str, history: list[dict] | None = None) -> dict:
+def run_query(question: str, conversation_id: int) -> dict:
     """
-    Run a single user question through the AI with tool-call loop.
-
+    Run a user query through the compiled ReAct agent utilizing persistent state checkpoints.
+    
     Args:
-        question: The user's natural-language query.
-        history:  Previous messages for multi-turn context (list of {role, content}).
-
-    Returns:
-        {
-            answer (str): Final text response.
-            tool_calls (list): Records of each tool invoked and its result.
-            messages (list): Full updated message list (for storing in Conversation).
-        }
+        question: The user's natural language string.
+        conversation_id: The primary key of the database Conversation model to scope memory.
     """
-    provider = get_provider()
-    messages = list(history or [])
-    messages = [{"role": "system", "content": SYSTEM_PROMPT}] + [
-        m for m in messages if m.get("role") != "system"
-    ]
-    messages.append({"role": "user", "content": question})
+    # 2. Scope the thread state explicitly using the conversation database ID
+    config = {
+        "configurable": {"thread_id": str(conversation_id)},
+        "recursion_limit": MAX_TOOL_ITERATIONS * 2 + 2,
+    }
 
-    all_tool_calls = []
-    iterations = 0
-
-    while iterations < MAX_TOOL_ITERATIONS:
-        response = provider.chat(messages, tools=TOOLS)
-        finish = response.get("finish_reason", "stop")
-
-        if finish == "tool_calls" and response.get("tool_calls"):
-            # Append assistant message with tool_calls
-            messages.append({
-                "role": "assistant",
-                "content": response.get("content"),
-                "tool_calls": response["tool_calls"],
-            })
-            # Execute each tool and append results
-            for tc in response["tool_calls"]:
-                result_json = execute_tool(tc["name"], tc.get("arguments", "{}"))
-                all_tool_calls.append({
-                    "tool": tc["name"],
-                    "arguments": tc.get("arguments"),
-                    "result": result_json,
-                })
-                messages.append({
-                    "role": "tool",
-                    "tool_call_id": tc.get("id", ""),
-                    "name": tc["name"],
-                    "content": result_json,
-                })
-            iterations += 1
-        else:
-            # Final answer reached
-            answer = response.get("content") or "I was unable to find an answer to that query."
-            messages.append({"role": "assistant", "content": answer})
+    try:
+        # We only pass the newest question. LangGraph automatically fetches the matching
+        # history including structural ToolMessages seamlessly from its memory checkpointer.
+        result = agent.invoke(
+            {"messages": [HumanMessage(content=question)]},
+            config=config
+        )
+    except GraphRecursionError:
+        return {
+            "answer": "I reached my tool call limit before finding an answer. Try rephrasing your question.",
+            "tool_calls": [],
+        }
+    except Exception as exc:
+        exc_str = str(exc)
+        # Catch genuine rate limits vs structure validation crashes
+        if any(token in exc_str for token in ["429", "RESOURCE_EXHAUSTED", "quota"]):
             return {
-                "answer": answer,
-                "tool_calls": all_tool_calls,
-                "messages": messages,
+                "answer": "The AI service is currently rate-limited. Please wait a moment and try again.",
+                "tool_calls": [],
             }
+        logger.exception("AI agent execution breakdown: %s", exc)
+        return {
+            "answer": "An unexpected error occurred while compiling your data parameters. Please try again.",
+            "tool_calls": [],
+        }
 
-    # Iteration cap hit — ask model to summarise
-    messages.append({
-        "role": "user",
-        "content": "Please summarise what you found so far in a short answer.",
-    })
-    final = provider.chat(messages)
-    answer = final.get("content") or "Maximum tool iterations reached."
-    messages.append({"role": "assistant", "content": answer})
-    return {"answer": answer, "tool_calls": all_tool_calls, "messages": messages}
+    messages = result["messages"]
+
+    # 3. Parse tool execution contexts cleanly for your frontend Sources output
+    all_tool_calls: list[dict] = []
+    from langchain_core.messages import AIMessage, ToolMessage
+    
+    for msg in messages:
+        if isinstance(msg, AIMessage) and msg.tool_calls:
+            for tc in msg.tool_calls:
+                all_tool_calls.append(
+                    {
+                        "tool": tc["name"],
+                        "arguments": tc.get("args", {}),
+                        "result": None,
+                        "_call_id": tc["id"],
+                    }
+                )
+        elif isinstance(msg, ToolMessage):
+            for tc in all_tool_calls:
+                if tc.get("_call_id") == msg.tool_call_id:
+                    tc["result"] = msg.content
+                    break
+
+    for tc in all_tool_calls:
+        tc.pop("_call_id", None)
+
+    # 4. Extract final textual answer cleanly
+    final_answer = ""
+    for msg in reversed(messages):
+        if isinstance(msg, AIMessage) and not msg.tool_calls:
+            content = msg.content
+            if isinstance(content, list):
+                # Gemini can return content as a list of part dicts: [{type, text, extras}, ...]
+                final_answer = "".join(
+                    part.get("text", "") if isinstance(part, dict) else str(part)
+                    for part in content
+                )
+            elif isinstance(content, str):
+                final_answer = content
+            else:
+                final_answer = str(content) if content else ""
+            break
+
+    if not final_answer:
+        final_answer = "I was unable to assemble a definitive answer to that query."
+
+    return {
+        "answer": final_answer,
+        "tool_calls": all_tool_calls,
+    }

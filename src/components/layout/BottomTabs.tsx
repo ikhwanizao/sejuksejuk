@@ -1,5 +1,11 @@
 import { NavLink } from "react-router";
-import { ClipboardList, PlusCircle, Briefcase, BarChart3 } from "lucide-react";
+import {
+  ClipboardList,
+  PlusCircle,
+  Briefcase,
+  BarChart3,
+  Bot,
+} from "lucide-react";
 import { useAuthStore } from "@/stores/auth";
 import { cn } from "@/lib/utils";
 
@@ -7,11 +13,13 @@ const adminTabs = [
   { to: "/orders", label: "Orders", icon: ClipboardList },
   { to: "/orders/new", label: "New", icon: PlusCircle },
   { to: "/kpi", label: "KPI", icon: BarChart3 },
+  { to: "/ai", label: "AI", icon: Bot },
 ];
 
 const managerTabs = [
   { to: "/orders", label: "Orders", icon: ClipboardList },
   { to: "/kpi", label: "KPI", icon: BarChart3 },
+  { to: "/ai", label: "AI", icon: Bot },
 ];
 
 const technicianTabs = [{ to: "/jobs", label: "Jobs", icon: Briefcase }];
