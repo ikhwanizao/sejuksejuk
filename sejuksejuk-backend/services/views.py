@@ -84,7 +84,7 @@ class ReportDetailView(APIView):
     def get(self, request, order_pk):
         order = get_object_or_404(Order, pk=order_pk)
         report = get_object_or_404(ServiceReport, order=order)
-        return Response(ServiceReportSerializer(report).data)
+        return Response(ServiceReportSerializer(report, context={"request": request}).data)
 
 
 class AttachmentListCreateView(APIView):
@@ -93,7 +93,11 @@ class AttachmentListCreateView(APIView):
     @extend_schema(responses=ServiceAttachmentSerializer(many=True))
     def get(self, request, report_pk):
         report = get_object_or_404(ServiceReport, pk=report_pk)
-        return Response(ServiceAttachmentSerializer(report.attachments.all(), many=True).data)
+        return Response(
+            ServiceAttachmentSerializer(
+                report.attachments.all(), many=True, context={"request": request}
+            ).data
+        )
 
     @extend_schema(request=ServiceAttachmentCreateSerializer, responses={201: ServiceAttachmentSerializer})
     def post(self, request, report_pk):
@@ -106,7 +110,10 @@ class AttachmentListCreateView(APIView):
         )
         ser.is_valid(raise_exception=True)
         attachment = ser.save()
-        return Response(ServiceAttachmentSerializer(attachment).data, status=status.HTTP_201_CREATED)
+        return Response(
+            ServiceAttachmentSerializer(attachment, context={"request": request}).data,
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class AttachmentDeleteView(APIView):

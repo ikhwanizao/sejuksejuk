@@ -8,7 +8,11 @@ class ServiceAttachmentSerializer(serializers.ModelSerializer):
 
     def get_file_url(self, obj):
         if obj.file:
-            return obj.file.url 
+            url = obj.file.url
+            request = self.context.get("request") if hasattr(self, "context") else None
+            if request and not url.startswith("http"):
+                return request.build_absolute_uri(url)
+            return url
         return None
 
     class Meta:
