@@ -25,6 +25,8 @@ INSTALLED_APPS = [
     'django_filters',
     'corsheaders',
     'drf_spectacular',
+    'cloudinary_storage',
+    'cloudinary',
     # local apps
     'accounts',
     'orders',
@@ -174,3 +176,10 @@ GEMINI_API_KEY = config('GEMINI_API_KEY', default='')
 CLAUDE_API_KEY = config('CLAUDE_API_KEY', default='')
 
 STATIC_ROOT = BASE_DIR / 'staticfiles'  
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME', default=''),
+    'API_KEY': config('CLOUDINARY_API_KEY', default=''),
+    'API_SECRET': config('CLOUDINARY_API_SECRET', default=''),
+}
