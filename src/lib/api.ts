@@ -1,4 +1,5 @@
 import axios, { type AxiosRequestConfig } from "axios";
+import type { AttachmentKind } from "@/types/api";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
@@ -65,4 +66,22 @@ api.interceptors.response.use(
 export const mediaUrl = (path: string) => {
   const base = import.meta.env.VITE_MEDIA_BASE_URL ?? "http://localhost:8000";
   return path.startsWith("http") ? path : `${base}${path}`;
+};
+
+export const attachmentUrl = (path: string, kind: AttachmentKind) => {
+  if (path.startsWith("http")) {
+    return path;
+  }
+
+  const cloudinaryBase = import.meta.env.VITE_CLOUDINARY_BASE_URL;
+  if (cloudinaryBase) {
+    const normalizedBase = cloudinaryBase.replace(/\/+$/, "");
+    const normalizedPath = path.replace(/^\/?media\//, "").replace(/^\/+/, "");
+    const resourceType =
+      kind === "video" ? "video" : kind === "pdf" ? "raw" : "image";
+
+    return `${normalizedBase}/${resourceType}/upload/${normalizedPath}`;
+  }
+
+  return mediaUrl(path);
 };

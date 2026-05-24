@@ -1,4 +1,4 @@
-import { mediaUrl } from "@/lib/api";
+import { attachmentUrl } from "@/lib/api";
 import { FileText, Film } from "lucide-react";
 import type { AttachmentKind } from "@/types/api";
 
@@ -9,7 +9,7 @@ interface FilePreviewProps {
 }
 
 export function FilePreview({ url, kind, className }: FilePreviewProps) {
-  const fullUrl = mediaUrl(url);
+  const fullUrl = attachmentUrl(url, kind);
 
   if (kind === "photo") {
     return (
