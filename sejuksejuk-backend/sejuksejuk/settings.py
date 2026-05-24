@@ -116,6 +116,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'  
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -175,9 +176,7 @@ OPENAI_API_KEY = config('OPENAI_API_KEY', default='')
 GEMINI_API_KEY = config('GEMINI_API_KEY', default='')
 CLAUDE_API_KEY = config('CLAUDE_API_KEY', default='')
 
-STATIC_ROOT = BASE_DIR / 'staticfiles'  
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
-WHITENOISE_MANIFEST_STRICT = False
+# STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 WHITENOISE_KEEP_ONLY_HASHED_FILES = True
 WHITENOISE_MAX_WORKERS = 1
 
@@ -189,13 +188,6 @@ CLOUDINARY_API_SECRET = config('CLOUDINARY_API_SECRET', default='')
 USE_CLOUDINARY = bool(CLOUDINARY_URL or CLOUDINARY_CLOUD_NAME)
 
 if USE_CLOUDINARY:
-    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-    if CLOUDINARY_CLOUD_NAME:
-        CLOUDINARY_STORAGE = {
-            'CLOUD_NAME': CLOUDINARY_CLOUD_NAME,
-            'API_KEY': CLOUDINARY_API_KEY,
-            'API_SECRET': CLOUDINARY_API_SECRET,
-        }
     STORAGES = {
         'default': {
             'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage',
@@ -205,7 +197,6 @@ if USE_CLOUDINARY:
         },
     }
 else:
-    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
     STORAGES = {
         'default': {
             'BACKEND': 'django.core.files.storage.FileSystemStorage',
@@ -214,3 +205,5 @@ else:
             'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
         },
     }
+
+WHITENOISE_MANIFEST_STRICT = False
