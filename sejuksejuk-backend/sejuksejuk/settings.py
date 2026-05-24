@@ -18,6 +18,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'django.contrib.staticfiles',
     # third-party
     'rest_framework',
     'rest_framework_simplejwt',
@@ -25,7 +26,6 @@ INSTALLED_APPS = [
     'corsheaders',
     'drf_spectacular',
     'cloudinary_storage',
-    'django.contrib.staticfiles',
     'cloudinary',
     # local apps
     'accounts',
