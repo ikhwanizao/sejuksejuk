@@ -122,7 +122,7 @@ export default function JobDetailPage() {
                 {report.attachments.map((att) => (
                   <FilePreview
                     key={att.id}
-                    url={att.file}
+                    url={att.file_url}
                     kind={att.kind}
                     className="h-16 w-16"
                   />

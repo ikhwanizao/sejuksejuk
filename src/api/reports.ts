@@ -2,13 +2,34 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import type { ServiceAttachment, ServiceReport } from "@/types/api";
 
+type AttachmentPayload = Omit<ServiceAttachment, "file_url"> & {
+  file_url?: string;
+};
+
+function normalizeAttachment(att: AttachmentPayload): ServiceAttachment {
+  return {
+    ...att,
+    file_url: att.file_url ?? att.file,
+  };
+}
+
+function normalizeReport(report: ServiceReport | null): ServiceReport | null {
+  if (!report) return report;
+  return {
+    ...report,
+    attachments: report.attachments.map((att) =>
+      normalizeAttachment(att as AttachmentPayload),
+    ),
+  };
+}
+
 export function useReport(orderId: number | string | undefined) {
   return useQuery({
     queryKey: ["report", orderId],
     queryFn: () =>
       api
         .get<ServiceReport>(`/orders/${orderId}/report/`)
-        .then((r) => r.data)
+        .then((r) => normalizeReport(r.data))
         .catch((err) => {
           if (err?.response?.status === 404) return null;
           throw err;
@@ -23,8 +44,8 @@ export function useAttachments(reportId: number | undefined) {
     queryKey: ["attachments", reportId],
     queryFn: () =>
       api
-        .get<ServiceAttachment[]>(`/reports/${reportId}/attachments/`)
-        .then((r) => r.data),
+        .get<AttachmentPayload[]>(`/reports/${reportId}/attachments/`)
+        .then((r) => r.data.map(normalizeAttachment)),
     enabled: !!reportId,
   });
 }
@@ -39,10 +60,10 @@ export function useUploadAttachment(
       const form = new FormData();
       form.append("file", file);
       return api
-        .post<ServiceAttachment>(`/reports/${reportId}/attachments/`, form, {
+        .post<AttachmentPayload>(`/reports/${reportId}/attachments/`, form, {
           headers: { "Content-Type": "multipart/form-data" },
         })
-        .then((r) => r.data);
+        .then((r) => normalizeAttachment(r.data));
     },
     onSuccess: (attachment) => {
       qc.setQueryData<ServiceAttachment[]>(["attachments", reportId], (old) =>

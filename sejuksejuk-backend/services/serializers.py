@@ -4,9 +4,16 @@ from .validators import detect_kind, validate_attachment_count, validate_attachm
 
 
 class ServiceAttachmentSerializer(serializers.ModelSerializer):
+    file_url = serializers.SerializerMethodField()
+
+    def get_file_url(self, obj):
+        if obj.file:
+            return obj.file.url 
+        return None
+
     class Meta:
         model = ServiceAttachment
-        fields = ["id", "file", "kind", "uploaded_at"]
+        fields = ["id", "file", "file_url", "kind", "uploaded_at"]
         read_only_fields = ["id", "kind", "uploaded_at"]
 
 

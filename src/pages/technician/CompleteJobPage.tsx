@@ -474,7 +474,7 @@ export default function CompleteJobPage() {
               {visibleAttachments.map((att) => (
                 <div key={att.id} className="relative">
                   <FilePreview
-                    url={att.file}
+                    url={att.file_url}
                     kind={att.kind}
                     className="h-20 w-20"
                   />

@@ -93,6 +93,7 @@ export type PaymentMethod = "cash" | "transfer" | "card" | "ewallet";
 export interface ServiceAttachment {
   id: number;
   file: string;
+  file_url: string;
   kind: AttachmentKind;
   uploaded_at: string;
 }
