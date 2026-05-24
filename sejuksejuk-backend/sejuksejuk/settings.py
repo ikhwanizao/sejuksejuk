@@ -18,7 +18,6 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'django.contrib.staticfiles',
     # third-party
     'rest_framework',
     'rest_framework_simplejwt',
@@ -26,6 +25,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'drf_spectacular',
     'cloudinary_storage',
+    'django.contrib.staticfiles',
     'cloudinary',
     # local apps
     'accounts',
@@ -178,8 +178,3 @@ CLAUDE_API_KEY = config('CLAUDE_API_KEY', default='')
 STATIC_ROOT = BASE_DIR / 'staticfiles'  
 
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME', default=''),
-    'API_KEY': config('CLOUDINARY_API_KEY', default=''),
-    'API_SECRET': config('CLOUDINARY_API_SECRET', default=''),
-}
