@@ -476,7 +476,7 @@ export default function OrderDetailPage() {
                       {report.attachments.map((att) => (
                         <FilePreview
                           key={att.id}
-                          url={att.file}
+                          url={att.file_url}
                           kind={att.kind}
                         />
                       ))}
