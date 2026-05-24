@@ -176,9 +176,7 @@ OPENAI_API_KEY = config('OPENAI_API_KEY', default='')
 GEMINI_API_KEY = config('GEMINI_API_KEY', default='')
 CLAUDE_API_KEY = config('CLAUDE_API_KEY', default='')
 
-# STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
-WHITENOISE_KEEP_ONLY_HASHED_FILES = True
-WHITENOISE_MAX_WORKERS = 1
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 CLOUDINARY_URL = config('CLOUDINARY_URL', default='')
 CLOUDINARY_CLOUD_NAME = config('CLOUDINARY_CLOUD_NAME', default='')
@@ -207,3 +205,4 @@ else:
     }
 
 WHITENOISE_MANIFEST_STRICT = False
+WHITENOISE_MAX_WORKERS = 1
