@@ -44,6 +44,11 @@ class NotificationService:
         "Please proceed accordingly. Thank you!"
     )
 
+    @staticmethod
+    def _upsert_notification(*, filters: dict, defaults: dict) -> Notification:
+        notif, _ = Notification.objects.update_or_create(defaults=defaults, **filters)
+        return notif
+
     @classmethod
     def notify_job_done(cls, order) -> list:
         """
@@ -67,12 +72,18 @@ class NotificationService:
             time=time_str,
         )
         customer_url = cls.provider.build(order.customer_phone, customer_msg)
-        notif = Notification.objects.create(
-            order=order,
-            recipient_type=Notification.RecipientType.CUSTOMER,
-            recipient_phone=order.customer_phone,
-            message=customer_msg,
-            deep_link_url=customer_url,
+        notif = cls._upsert_notification(
+            filters={
+                "order": order,
+                "recipient_type": Notification.RecipientType.CUSTOMER,
+                "recipient_user": None,
+                "recipient_phone": order.customer_phone,
+            },
+            defaults={
+                "message": customer_msg,
+                "deep_link_url": customer_url,
+                "notification_status": Notification.NotificationStatus.GENERATED,
+            },
         )
         created.append(notif)
 
@@ -92,13 +103,18 @@ class NotificationService:
                     time=time_str,
                 )
                 mgr_url = cls.provider.build(manager.phone, mgr_msg) if manager.phone else ""
-                notif = Notification.objects.create(
-                    order=order,
-                    recipient_type=Notification.RecipientType.MANAGER,
-                    recipient_phone=manager.phone or "",
-                    message=mgr_msg,
-                    deep_link_url=mgr_url,
-                    recipient_user=manager,
+                notif = cls._upsert_notification(
+                    filters={
+                        "order": order,
+                        "recipient_type": Notification.RecipientType.MANAGER,
+                        "recipient_user": manager,
+                    },
+                    defaults={
+                        "recipient_phone": manager.phone or "",
+                        "message": mgr_msg,
+                        "deep_link_url": mgr_url,
+                        "notification_status": Notification.NotificationStatus.GENERATED,
+                    },
                 )
                 created.append(notif)
                 notified_ids.add(manager.pk)
@@ -112,13 +128,18 @@ class NotificationService:
                 time=time_str,
             )
             admin_url = cls.provider.build(admin_user.phone, admin_msg) if admin_user.phone else ""
-            notif = Notification.objects.create(
-                order=order,
-                recipient_type=Notification.RecipientType.MANAGER,
-                recipient_phone=admin_user.phone or "",
-                message=admin_msg,
-                deep_link_url=admin_url,
-                recipient_user=admin_user,
+            notif = cls._upsert_notification(
+                filters={
+                    "order": order,
+                    "recipient_type": Notification.RecipientType.MANAGER,
+                    "recipient_user": admin_user,
+                },
+                defaults={
+                    "recipient_phone": admin_user.phone or "",
+                    "message": admin_msg,
+                    "deep_link_url": admin_url,
+                    "notification_status": Notification.NotificationStatus.GENERATED,
+                },
             )
             created.append(notif)
 
