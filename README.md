@@ -110,7 +110,7 @@ Response + tool call sources returned to the frontend
 
 **Hardest module: AI integration.** Getting the LangGraph agent to reliably choose the right tool, handle ambiguous technician names (e.g. "Ali" matching multiple users), and return clean structured responses took the most iteration. The main challenge was designing tool schemas that are narrow enough to be safe but flexible enough to cover natural language variations.
 
-**Easiest module: KPI Dashboard.** The data aggregation was straightforward once the ORM queries were in place. Django's `annotate` + `values` pattern handles grouping and summing cleanly, and the frontend just needed to display the numbers.
+**Easiest module: KPI Dashboard.** The data aggregation was straightforward as we only need to query the numbers of data for the dashboard.
 
 **Assumptions made:**
 
@@ -148,9 +148,14 @@ All generated code was reviewed, tested, and adjusted. The architecture decision
 ### Backend
 
 ```bash
-cd backend
+cd sejuksejuk-backend
+python -m venv venv
+# Windows
+venv\Scripts\activate
+# macOS / Linux
+source venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env   # fill in your values
+cp .env.example .env   # then open .env and fill in your values
 python manage.py migrate
 python manage.py createsuperuser
 python manage.py runserver
@@ -175,7 +180,3 @@ npm run dev
 | `CLAUDE_API_KEY` | Required if `AI_PROVIDER=claude`        |
 | `GEMINI_API_KEY` | Required if `AI_PROVIDER=gemini`        |
 | `CLOUDINARY_URL` | Optional — enables cloud file storage   |
-
-### API Documentation
-
-Interactive Swagger docs available at `/api/docs/` when the backend is running.
