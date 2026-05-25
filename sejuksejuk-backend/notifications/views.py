@@ -5,11 +5,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from drf_spectacular.utils import extend_schema
 
-from accounts.permissions import IsManagerOrAdmin
 from orders.models import Order
 
 from .models import Notification
-from .services import NotificationService
 
 
 class NotificationSerializer(drf_serializers.ModelSerializer):
@@ -40,16 +38,6 @@ class NotificationListView(APIView):
             return Response({"detail": "Forbidden."}, status=403)
         notifications = order.notifications.all()
         return Response(NotificationSerializer(notifications, many=True).data)
-
-
-class NotificationRegenerateView(APIView):
-    permission_classes = [IsManagerOrAdmin]
-
-    @extend_schema(request=None, responses={201: NotificationSerializer(many=True)})
-    def post(self, request, order_pk):
-        order = get_object_or_404(Order, pk=order_pk)
-        notifications = NotificationService.notify_job_done(order)
-        return Response(NotificationSerializer(notifications, many=True).data, status=201)
 
 
 class InboxView(APIView):

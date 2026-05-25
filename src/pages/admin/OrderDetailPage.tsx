@@ -18,10 +18,7 @@ import {
 } from "@/api/orders";
 import { useReport } from "@/api/reports";
 import { useCreatePayment } from "@/api/payments";
-import {
-  useOrderNotifications,
-  useRegenerateNotifications,
-} from "@/api/notifications";
+import { useOrderNotifications } from "@/api/notifications";
 import { useAuthStore } from "@/stores/auth";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { ErrorState } from "@/components/common/ErrorState";
@@ -69,7 +66,6 @@ export default function OrderDetailPage() {
   const { data: order, isLoading, isError, refetch } = useOrder(id);
   const { data: report } = useReport(id);
   const { data: notifications } = useOrderNotifications(id);
-  const regenerateNotifs = useRegenerateNotifications(Number(id));
 
   const reviewOrder = useReviewOrder(Number(id));
   const closeOrder = useCloseOrder(Number(id));
@@ -491,22 +487,6 @@ export default function OrderDetailPage() {
         {/* ── Notifications ── */}
         <TabsContent value="notifications">
           <div className="space-y-3">
-            <div className="flex justify-end">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  regenerateNotifs.mutate(undefined, {
-                    onSuccess: () => toast.success("Notifications regenerated"),
-                    onError: () => toast.error("Failed to regenerate"),
-                  })
-                }
-                disabled={regenerateNotifs.isPending}
-              >
-                {regenerateNotifs.isPending ? "Regenerating…" : "Regenerate"}
-              </Button>
-            </div>
-
             {!notifications || notifications.length === 0 ? (
               <EmptyState
                 title="No notifications"

@@ -13,18 +13,6 @@ export function useOrderNotifications(orderId: number | string | undefined) {
   });
 }
 
-export function useRegenerateNotifications(orderId: number) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: () =>
-      api
-        .post<Notification[]>(`/orders/${orderId}/notifications/regenerate/`)
-        .then((r) => r.data),
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: ["notifications", orderId] }),
-  });
-}
-
 export function useMyNotifications() {
   return useQuery({
     queryKey: ["notifications", "inbox"],

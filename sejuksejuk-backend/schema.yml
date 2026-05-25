@@ -8,48 +8,48 @@ paths:
     get:
       operationId: ai_conversations_retrieve
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
       tags:
-      - ai
+        - ai
       security:
-      - jwtAuth: []
+        - jwtAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ConversationDetail'
-          description: ''
+                $ref: "#/components/schemas/ConversationDetail"
+          description: ""
   /api/ai/query/:
     post:
       operationId: ai_query_create
       tags:
-      - ai
+        - ai
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Query'
+              $ref: "#/components/schemas/Query"
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Query'
+              $ref: "#/components/schemas/Query"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Query'
+              $ref: "#/components/schemas/Query"
         required: true
       security:
-      - jwtAuth: []
+        - jwtAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AIQueryResponse'
-          description: ''
+                $ref: "#/components/schemas/AIQueryResponse"
+          description: ""
   /api/auth/login/:
     post:
       operationId: auth_login_create
@@ -57,40 +57,40 @@ paths:
         Takes a set of user credentials and returns an access and refresh JSON web
         token pair to prove the authentication of those credentials.
       tags:
-      - auth
+        - auth
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TokenObtainPair'
+              $ref: "#/components/schemas/TokenObtainPair"
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/TokenObtainPair'
+              $ref: "#/components/schemas/TokenObtainPair"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/TokenObtainPair'
+              $ref: "#/components/schemas/TokenObtainPair"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TokenObtainPair'
-          description: ''
+                $ref: "#/components/schemas/TokenObtainPair"
+          description: ""
   /api/auth/me/:
     get:
       operationId: auth_me_retrieve
       tags:
-      - auth
+        - auth
       security:
-      - jwtAuth: []
+        - jwtAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
-          description: ''
+                $ref: "#/components/schemas/User"
+          description: ""
   /api/auth/refresh/:
     post:
       operationId: auth_refresh_create
@@ -98,706 +98,685 @@ paths:
         Takes a refresh type JSON web token and returns an access type JSON web
         token if the refresh token is valid.
       tags:
-      - auth
+        - auth
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TokenRefresh'
+              $ref: "#/components/schemas/TokenRefresh"
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/TokenRefresh'
+              $ref: "#/components/schemas/TokenRefresh"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/TokenRefresh'
+              $ref: "#/components/schemas/TokenRefresh"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TokenRefresh'
-          description: ''
+                $ref: "#/components/schemas/TokenRefresh"
+          description: ""
   /api/kpi/leaderboard/:
     get:
       operationId: kpi_leaderboard_retrieve
       parameters:
-      - in: query
-        name: end
-        schema:
-          type: string
-        description: ISO date YYYY-MM-DD
-      - in: query
-        name: metric
-        schema:
-          type: string
-        description: jobs | amount
-      - in: query
-        name: period
-        schema:
-          type: string
-        description: week | month | today
-      - in: query
-        name: start
-        schema:
-          type: string
-        description: ISO date YYYY-MM-DD
+        - in: query
+          name: end
+          schema:
+            type: string
+          description: ISO date YYYY-MM-DD
+        - in: query
+          name: metric
+          schema:
+            type: string
+          description: jobs | amount
+        - in: query
+          name: period
+          schema:
+            type: string
+          description: week | month | today
+        - in: query
+          name: start
+          schema:
+            type: string
+          description: ISO date YYYY-MM-DD
       tags:
-      - kpi
+        - kpi
       security:
-      - jwtAuth: []
+        - jwtAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LeaderboardRow'
-          description: ''
+                $ref: "#/components/schemas/LeaderboardRow"
+          description: ""
   /api/kpi/summary/:
     get:
       operationId: kpi_summary_retrieve
       parameters:
-      - in: query
-        name: end
-        schema:
-          type: string
-        description: ISO date YYYY-MM-DD
-      - in: query
-        name: period
-        schema:
-          type: string
-        description: week | month | today
-      - in: query
-        name: start
-        schema:
-          type: string
-        description: ISO date YYYY-MM-DD
+        - in: query
+          name: end
+          schema:
+            type: string
+          description: ISO date YYYY-MM-DD
+        - in: query
+          name: period
+          schema:
+            type: string
+          description: week | month | today
+        - in: query
+          name: start
+          schema:
+            type: string
+          description: ISO date YYYY-MM-DD
       tags:
-      - kpi
+        - kpi
       security:
-      - jwtAuth: []
+        - jwtAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/KPISummary'
-          description: ''
+                $ref: "#/components/schemas/KPISummary"
+          description: ""
   /api/kpi/technicians/:
     get:
       operationId: kpi_technicians_retrieve
       parameters:
-      - in: query
-        name: end
-        schema:
-          type: string
-        description: ISO date YYYY-MM-DD
-      - in: query
-        name: period
-        schema:
-          type: string
-        description: week | month | today
-      - in: query
-        name: start
-        schema:
-          type: string
-        description: ISO date YYYY-MM-DD
+        - in: query
+          name: end
+          schema:
+            type: string
+          description: ISO date YYYY-MM-DD
+        - in: query
+          name: period
+          schema:
+            type: string
+          description: week | month | today
+        - in: query
+          name: start
+          schema:
+            type: string
+          description: ISO date YYYY-MM-DD
       tags:
-      - kpi
+        - kpi
       security:
-      - jwtAuth: []
+        - jwtAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/KPIRow'
-          description: ''
+                $ref: "#/components/schemas/KPIRow"
+          description: ""
   /api/orders/:
     get:
       operationId: orders_list
       parameters:
-      - in: query
-        name: assigned_technician
-        schema:
-          type: integer
-      - in: query
-        name: created_after
-        schema:
-          type: string
-          format: date-time
-      - in: query
-        name: created_before
-        schema:
-          type: string
-          format: date-time
-      - name: ordering
-        required: false
-        in: query
-        description: Which field to use when ordering the results.
-        schema:
-          type: string
-      - name: page
-        required: false
-        in: query
-        description: A page number within the paginated result set.
-        schema:
-          type: integer
-      - name: search
-        required: false
-        in: query
-        description: A search term.
-        schema:
-          type: string
-      - in: query
-        name: service_type
-        schema:
-          type: integer
-      - in: query
-        name: status
-        schema:
-          type: string
-          enum:
-          - assigned
-          - closed
-          - in_progress
-          - job_done
-          - new
-          - reviewed
-        description: |-
-          * `new` - New
-          * `assigned` - Assigned
-          * `in_progress` - In Progress
-          * `job_done` - Job Done
-          * `reviewed` - Reviewed
-          * `closed` - Closed
+        - in: query
+          name: assigned_technician
+          schema:
+            type: integer
+        - in: query
+          name: created_after
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: created_before
+          schema:
+            type: string
+            format: date-time
+        - name: ordering
+          required: false
+          in: query
+          description: Which field to use when ordering the results.
+          schema:
+            type: string
+        - name: page
+          required: false
+          in: query
+          description: A page number within the paginated result set.
+          schema:
+            type: integer
+        - name: search
+          required: false
+          in: query
+          description: A search term.
+          schema:
+            type: string
+        - in: query
+          name: service_type
+          schema:
+            type: integer
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum:
+              - assigned
+              - closed
+              - in_progress
+              - job_done
+              - new
+              - reviewed
+          description: |-
+            * `new` - New
+            * `assigned` - Assigned
+            * `in_progress` - In Progress
+            * `job_done` - Job Done
+            * `reviewed` - Reviewed
+            * `closed` - Closed
       tags:
-      - orders
+        - orders
       security:
-      - jwtAuth: []
+        - jwtAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedOrderListList'
-          description: ''
+                $ref: "#/components/schemas/PaginatedOrderListList"
+          description: ""
     post:
       operationId: orders_create
       tags:
-      - orders
+        - orders
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OrderCreate'
+              $ref: "#/components/schemas/OrderCreate"
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/OrderCreate'
+              $ref: "#/components/schemas/OrderCreate"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/OrderCreate'
+              $ref: "#/components/schemas/OrderCreate"
         required: true
       security:
-      - jwtAuth: []
+        - jwtAuth: []
       responses:
-        '201':
+        "201":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OrderCreate'
-          description: ''
+                $ref: "#/components/schemas/OrderCreate"
+          description: ""
   /api/orders/{order_pk}/notifications/:
     get:
       operationId: orders_notifications_list
       parameters:
-      - in: path
-        name: order_pk
-        schema:
-          type: integer
-        required: true
+        - in: path
+          name: order_pk
+          schema:
+            type: integer
+          required: true
       tags:
-      - orders
+        - orders
       security:
-      - jwtAuth: []
+        - jwtAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Notification'
-          description: ''
-  /api/orders/{order_pk}/notifications/regenerate/:
-    post:
-      operationId: orders_notifications_regenerate_create
-      parameters:
-      - in: path
-        name: order_pk
-        schema:
-          type: integer
-        required: true
-      tags:
-      - orders
-      security:
-      - jwtAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Notification'
-          description: ''
+                  $ref: "#/components/schemas/Notification"
+          description: ""
   /api/orders/{order_pk}/report/:
     get:
       operationId: orders_report_retrieve
       parameters:
-      - in: path
-        name: order_pk
-        schema:
-          type: integer
-        required: true
+        - in: path
+          name: order_pk
+          schema:
+            type: integer
+          required: true
       tags:
-      - orders
+        - orders
       security:
-      - jwtAuth: []
+        - jwtAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ServiceReport'
-          description: ''
+                $ref: "#/components/schemas/ServiceReport"
+          description: ""
   /api/orders/{id}/:
     get:
       operationId: orders_retrieve
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this order.
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this order.
+          required: true
       tags:
-      - orders
+        - orders
       security:
-      - jwtAuth: []
+        - jwtAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OrderDetail'
-          description: ''
+                $ref: "#/components/schemas/OrderDetail"
+          description: ""
     put:
       operationId: orders_update
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this order.
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this order.
+          required: true
       tags:
-      - orders
+        - orders
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OrderUpdate'
+              $ref: "#/components/schemas/OrderUpdate"
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/OrderUpdate'
+              $ref: "#/components/schemas/OrderUpdate"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/OrderUpdate'
+              $ref: "#/components/schemas/OrderUpdate"
         required: true
       security:
-      - jwtAuth: []
+        - jwtAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OrderUpdate'
-          description: ''
+                $ref: "#/components/schemas/OrderUpdate"
+          description: ""
     patch:
       operationId: orders_partial_update
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this order.
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this order.
+          required: true
       tags:
-      - orders
+        - orders
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedOrderUpdate'
+              $ref: "#/components/schemas/PatchedOrderUpdate"
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PatchedOrderUpdate'
+              $ref: "#/components/schemas/PatchedOrderUpdate"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedOrderUpdate'
+              $ref: "#/components/schemas/PatchedOrderUpdate"
       security:
-      - jwtAuth: []
+        - jwtAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OrderUpdate'
-          description: ''
+                $ref: "#/components/schemas/OrderUpdate"
+          description: ""
     delete:
       operationId: orders_destroy
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this order.
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this order.
+          required: true
       tags:
-      - orders
+        - orders
       security:
-      - jwtAuth: []
+        - jwtAuth: []
       responses:
-        '204':
+        "204":
           description: No response body
   /api/orders/{id}/assign/:
     post:
       operationId: orders_assign_create
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this order.
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this order.
+          required: true
       tags:
-      - orders
+        - orders
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OrderDetail'
+              $ref: "#/components/schemas/OrderDetail"
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/OrderDetail'
+              $ref: "#/components/schemas/OrderDetail"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/OrderDetail'
+              $ref: "#/components/schemas/OrderDetail"
         required: true
       security:
-      - jwtAuth: []
+        - jwtAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OrderDetail'
-          description: ''
+                $ref: "#/components/schemas/OrderDetail"
+          description: ""
   /api/orders/{id}/close/:
     post:
       operationId: orders_close_create
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this order.
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this order.
+          required: true
       tags:
-      - orders
+        - orders
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OrderDetail'
+              $ref: "#/components/schemas/OrderDetail"
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/OrderDetail'
+              $ref: "#/components/schemas/OrderDetail"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/OrderDetail'
+              $ref: "#/components/schemas/OrderDetail"
         required: true
       security:
-      - jwtAuth: []
+        - jwtAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OrderDetail'
-          description: ''
+                $ref: "#/components/schemas/OrderDetail"
+          description: ""
   /api/orders/{id}/complete/:
     post:
       operationId: orders_complete_create
-      description: Handled by services app; this action delegates to ServiceReport
+      description:
+        Handled by services app; this action delegates to ServiceReport
         creation.
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this order.
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this order.
+          required: true
       tags:
-      - orders
+        - orders
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OrderDetail'
+              $ref: "#/components/schemas/OrderDetail"
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/OrderDetail'
+              $ref: "#/components/schemas/OrderDetail"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/OrderDetail'
+              $ref: "#/components/schemas/OrderDetail"
         required: true
       security:
-      - jwtAuth: []
+        - jwtAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OrderDetail'
-          description: ''
+                $ref: "#/components/schemas/OrderDetail"
+          description: ""
   /api/orders/{id}/review/:
     post:
       operationId: orders_review_create
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this order.
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this order.
+          required: true
       tags:
-      - orders
+        - orders
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OrderDetail'
+              $ref: "#/components/schemas/OrderDetail"
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/OrderDetail'
+              $ref: "#/components/schemas/OrderDetail"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/OrderDetail'
+              $ref: "#/components/schemas/OrderDetail"
         required: true
       security:
-      - jwtAuth: []
+        - jwtAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OrderDetail'
-          description: ''
+                $ref: "#/components/schemas/OrderDetail"
+          description: ""
   /api/orders/{id}/start/:
     post:
       operationId: orders_start_create
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this order.
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this order.
+          required: true
       tags:
-      - orders
+        - orders
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OrderDetail'
+              $ref: "#/components/schemas/OrderDetail"
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/OrderDetail'
+              $ref: "#/components/schemas/OrderDetail"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/OrderDetail'
+              $ref: "#/components/schemas/OrderDetail"
         required: true
       security:
-      - jwtAuth: []
+        - jwtAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OrderDetail'
-          description: ''
+                $ref: "#/components/schemas/OrderDetail"
+          description: ""
   /api/reports/{report_pk}/attachments/:
     get:
       operationId: reports_attachments_list
       parameters:
-      - in: path
-        name: report_pk
-        schema:
-          type: integer
-        required: true
+        - in: path
+          name: report_pk
+          schema:
+            type: integer
+          required: true
       tags:
-      - reports
+        - reports
       security:
-      - jwtAuth: []
+        - jwtAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ServiceAttachment'
-          description: ''
+                  $ref: "#/components/schemas/ServiceAttachment"
+          description: ""
     post:
       operationId: reports_attachments_create
       parameters:
-      - in: path
-        name: report_pk
-        schema:
-          type: integer
-        required: true
+        - in: path
+          name: report_pk
+          schema:
+            type: integer
+          required: true
       tags:
-      - reports
+        - reports
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ServiceAttachmentCreate'
+              $ref: "#/components/schemas/ServiceAttachmentCreate"
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ServiceAttachmentCreate'
+              $ref: "#/components/schemas/ServiceAttachmentCreate"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ServiceAttachmentCreate'
+              $ref: "#/components/schemas/ServiceAttachmentCreate"
         required: true
       security:
-      - jwtAuth: []
+        - jwtAuth: []
       responses:
-        '201':
+        "201":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ServiceAttachment'
-          description: ''
+                $ref: "#/components/schemas/ServiceAttachment"
+          description: ""
   /api/reports/{report_pk}/attachments/{att_pk}/:
     delete:
       operationId: reports_attachments_destroy
       parameters:
-      - in: path
-        name: att_pk
-        schema:
-          type: integer
-        required: true
-      - in: path
-        name: report_pk
-        schema:
-          type: integer
-        required: true
+        - in: path
+          name: att_pk
+          schema:
+            type: integer
+          required: true
+        - in: path
+          name: report_pk
+          schema:
+            type: integer
+          required: true
       tags:
-      - reports
+        - reports
       security:
-      - jwtAuth: []
+        - jwtAuth: []
       responses:
-        '204':
+        "204":
           description: No response body
   /api/reports/{report_pk}/payment/:
     post:
       operationId: reports_payment_create
       parameters:
-      - in: path
-        name: report_pk
-        schema:
-          type: integer
-        required: true
+        - in: path
+          name: report_pk
+          schema:
+            type: integer
+          required: true
       tags:
-      - reports
+        - reports
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Payment'
+              $ref: "#/components/schemas/Payment"
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Payment'
+              $ref: "#/components/schemas/Payment"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Payment'
+              $ref: "#/components/schemas/Payment"
         required: true
       security:
-      - jwtAuth: []
+        - jwtAuth: []
       responses:
-        '201':
+        "201":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Payment'
-          description: ''
+                $ref: "#/components/schemas/Payment"
+          description: ""
   /api/service-types/:
     get:
       operationId: service_types_list
       parameters:
-      - name: ordering
-        required: false
-        in: query
-        description: Which field to use when ordering the results.
-        schema:
-          type: string
-      - name: page
-        required: false
-        in: query
-        description: A page number within the paginated result set.
-        schema:
-          type: integer
-      - name: search
-        required: false
-        in: query
-        description: A search term.
-        schema:
-          type: string
+        - name: ordering
+          required: false
+          in: query
+          description: Which field to use when ordering the results.
+          schema:
+            type: string
+        - name: page
+          required: false
+          in: query
+          description: A page number within the paginated result set.
+          schema:
+            type: integer
+        - name: search
+          required: false
+          in: query
+          description: A search term.
+          schema:
+            type: string
       tags:
-      - service-types
+        - service-types
       security:
-      - jwtAuth: []
+        - jwtAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedServiceTypeList'
-          description: ''
+                $ref: "#/components/schemas/PaginatedServiceTypeList"
+          description: ""
   /api/service-types/{id}/:
     get:
       operationId: service_types_retrieve
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this service type.
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this service type.
+          required: true
       tags:
-      - service-types
+        - service-types
       security:
-      - jwtAuth: []
+        - jwtAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ServiceType'
-          description: ''
+                $ref: "#/components/schemas/ServiceType"
+          description: ""
 components:
   schemas:
     AIQueryResponse:
@@ -811,9 +790,9 @@ components:
           type: array
           items: {}
       required:
-      - answer
-      - conversation_id
-      - sources
+        - answer
+        - conversation_id
+        - sources
     Branch:
       type: object
       properties:
@@ -829,14 +808,14 @@ components:
         address:
           type: string
       required:
-      - code
-      - id
-      - name
+        - code
+        - id
+        - name
     ChannelEnum:
       enum:
-      - whatsapp
+        - whatsapp
       type: string
-      description: '* `whatsapp` - WhatsApp'
+      description: "* `whatsapp` - WhatsApp"
     ConversationDetail:
       type: object
       properties:
@@ -848,16 +827,16 @@ components:
         messages:
           type: array
           items:
-            $ref: '#/components/schemas/Message'
+            $ref: "#/components/schemas/Message"
       required:
-      - created_at
-      - id
-      - messages
+        - created_at
+        - id
+        - messages
     EventTypeEnum:
       enum:
-      - status_change
-      - rescheduled
-      - note
+        - status_change
+        - rescheduled
+        - note
       type: string
       description: |-
         * `status_change` - Status Change
@@ -878,11 +857,11 @@ components:
         reschedule_count:
           type: integer
       required:
-      - jobs_completed
-      - reschedule_count
-      - technician_id
-      - technician_name
-      - total_amount
+        - jobs_completed
+        - reschedule_count
+        - technician_id
+        - technician_name
+        - total_amount
     KPISummary:
       type: object
       properties:
@@ -898,16 +877,16 @@ components:
           type: number
           format: double
       required:
-      - end
-      - period
-      - start
-      - total_amount
-      - total_jobs
+        - end
+        - period
+        - start
+        - total_amount
+        - total_jobs
     KindEnum:
       enum:
-      - photo
-      - video
-      - pdf
+        - photo
+        - video
+        - pdf
       type: string
       description: |-
         * `photo` - Photo
@@ -930,12 +909,12 @@ components:
         reschedule_count:
           type: integer
       required:
-      - jobs_completed
-      - rank
-      - reschedule_count
-      - technician_id
-      - technician_name
-      - total_amount
+        - jobs_completed
+        - rank
+        - reschedule_count
+        - technician_id
+        - technician_name
+        - total_amount
     Message:
       type: object
       properties:
@@ -943,7 +922,7 @@ components:
           type: integer
           readOnly: true
         role:
-          $ref: '#/components/schemas/MessageRoleEnum'
+          $ref: "#/components/schemas/MessageRoleEnum"
         content:
           type: string
         created_at:
@@ -951,15 +930,15 @@ components:
           format: date-time
           readOnly: true
       required:
-      - content
-      - created_at
-      - id
-      - role
+        - content
+        - created_at
+        - id
+        - role
     MessageRoleEnum:
       enum:
-      - user
-      - assistant
-      - tool
+        - user
+        - assistant
+        - tool
       type: string
       description: |-
         * `user` - User
@@ -967,10 +946,10 @@ components:
         * `tool` - Tool
     MethodEnum:
       enum:
-      - cash
-      - transfer
-      - card
-      - ewallet
+        - cash
+        - transfer
+        - card
+        - ewallet
       type: string
       description: |-
         * `cash` - Cash
@@ -984,9 +963,9 @@ components:
           type: integer
           readOnly: true
         channel:
-          $ref: '#/components/schemas/ChannelEnum'
+          $ref: "#/components/schemas/ChannelEnum"
         recipient_type:
-          $ref: '#/components/schemas/RecipientTypeEnum'
+          $ref: "#/components/schemas/RecipientTypeEnum"
         recipient_phone:
           type: string
           maxLength: 20
@@ -995,22 +974,22 @@ components:
         deep_link_url:
           type: string
         notification_status:
-          $ref: '#/components/schemas/NotificationStatusEnum'
+          $ref: "#/components/schemas/NotificationStatusEnum"
         created_at:
           type: string
           format: date-time
           readOnly: true
       required:
-      - created_at
-      - deep_link_url
-      - id
-      - message
-      - recipient_phone
-      - recipient_type
+        - created_at
+        - deep_link_url
+        - id
+        - message
+        - recipient_phone
+        - recipient_type
     NotificationStatusEnum:
       enum:
-      - generated
-      - sent
+        - generated
+        - sent
       type: string
       description: |-
         * `generated` - Generated
@@ -1038,10 +1017,10 @@ components:
         admin_notes:
           type: string
       required:
-      - customer_address
-      - customer_name
-      - customer_phone
-      - problem_description
+        - customer_address
+        - customer_name
+        - customer_phone
+        - problem_description
     OrderDetail:
       type: object
       properties:
@@ -1063,7 +1042,7 @@ components:
           type: string
         service_type:
           allOf:
-          - $ref: '#/components/schemas/ServiceType'
+            - $ref: "#/components/schemas/ServiceType"
           readOnly: true
         quoted_price:
           type: string
@@ -1072,14 +1051,14 @@ components:
         admin_notes:
           type: string
         status:
-          $ref: '#/components/schemas/StatusEnum'
+          $ref: "#/components/schemas/StatusEnum"
         assigned_technician:
           allOf:
-          - $ref: '#/components/schemas/User'
+            - $ref: "#/components/schemas/User"
           readOnly: true
         created_by:
           allOf:
-          - $ref: '#/components/schemas/User'
+            - $ref: "#/components/schemas/User"
           readOnly: true
         created_at:
           type: string
@@ -1092,21 +1071,21 @@ components:
         events:
           type: array
           items:
-            $ref: '#/components/schemas/OrderEvent'
+            $ref: "#/components/schemas/OrderEvent"
           readOnly: true
       required:
-      - assigned_technician
-      - created_at
-      - created_by
-      - customer_address
-      - customer_name
-      - customer_phone
-      - events
-      - id
-      - order_no
-      - problem_description
-      - service_type
-      - updated_at
+        - assigned_technician
+        - created_at
+        - created_by
+        - customer_address
+        - customer_name
+        - customer_phone
+        - events
+        - id
+        - order_no
+        - problem_description
+        - service_type
+        - updated_at
     OrderEvent:
       type: object
       properties:
@@ -1114,7 +1093,7 @@ components:
           type: integer
           readOnly: true
         event_type:
-          $ref: '#/components/schemas/EventTypeEnum'
+          $ref: "#/components/schemas/EventTypeEnum"
         from_status:
           type: string
           maxLength: 20
@@ -1123,7 +1102,7 @@ components:
           maxLength: 20
         actor:
           allOf:
-          - $ref: '#/components/schemas/User'
+            - $ref: "#/components/schemas/User"
           readOnly: true
         note:
           type: string
@@ -1132,10 +1111,10 @@ components:
           format: date-time
           readOnly: true
       required:
-      - actor
-      - at
-      - event_type
-      - id
+        - actor
+        - at
+        - event_type
+        - id
     OrderList:
       type: object
       properties:
@@ -1153,30 +1132,30 @@ components:
           maxLength: 20
         service_type:
           allOf:
-          - $ref: '#/components/schemas/ServiceType'
+            - $ref: "#/components/schemas/ServiceType"
           readOnly: true
         status:
-          $ref: '#/components/schemas/StatusEnum'
+          $ref: "#/components/schemas/StatusEnum"
         quoted_price:
           type: string
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
         assigned_technician:
           allOf:
-          - $ref: '#/components/schemas/User'
+            - $ref: "#/components/schemas/User"
           readOnly: true
         created_at:
           type: string
           format: date-time
           readOnly: true
       required:
-      - assigned_technician
-      - created_at
-      - customer_name
-      - customer_phone
-      - id
-      - order_no
-      - service_type
+        - assigned_technician
+        - created_at
+        - customer_name
+        - customer_phone
+        - id
+        - order_no
+        - service_type
     OrderUpdate:
       type: object
       properties:
@@ -1200,15 +1179,15 @@ components:
         admin_notes:
           type: string
       required:
-      - customer_address
-      - customer_name
-      - customer_phone
-      - problem_description
+        - customer_address
+        - customer_name
+        - customer_phone
+        - problem_description
     PaginatedOrderListList:
       type: object
       required:
-      - count
-      - results
+        - count
+        - results
       properties:
         count:
           type: integer
@@ -1226,12 +1205,12 @@ components:
         results:
           type: array
           items:
-            $ref: '#/components/schemas/OrderList'
+            $ref: "#/components/schemas/OrderList"
     PaginatedServiceTypeList:
       type: object
       required:
-      - count
-      - results
+        - count
+        - results
       properties:
         count:
           type: integer
@@ -1249,7 +1228,7 @@ components:
         results:
           type: array
           items:
-            $ref: '#/components/schemas/ServiceType'
+            $ref: "#/components/schemas/ServiceType"
     PatchedOrderUpdate:
       type: object
       properties:
@@ -1283,7 +1262,7 @@ components:
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
         method:
-          $ref: '#/components/schemas/MethodEnum'
+          $ref: "#/components/schemas/MethodEnum"
         receipt_photo:
           type: string
           format: uri
@@ -1293,10 +1272,10 @@ components:
           format: date-time
           readOnly: true
       required:
-      - amount
-      - captured_at
-      - id
-      - method
+        - amount
+        - captured_at
+        - id
+        - method
     Query:
       type: object
       properties:
@@ -1308,12 +1287,12 @@ components:
           type: integer
           nullable: true
       required:
-      - question
+        - question
     RecipientTypeEnum:
       enum:
-      - customer
-      - technician
-      - manager
+        - customer
+        - technician
+        - manager
       type: string
       description: |-
         * `customer` - Customer
@@ -1330,17 +1309,17 @@ components:
           format: uri
         kind:
           allOf:
-          - $ref: '#/components/schemas/KindEnum'
+            - $ref: "#/components/schemas/KindEnum"
           readOnly: true
         uploaded_at:
           type: string
           format: date-time
           readOnly: true
       required:
-      - file
-      - id
-      - kind
-      - uploaded_at
+        - file
+        - id
+        - kind
+        - uploaded_at
     ServiceAttachmentCreate:
       type: object
       properties:
@@ -1348,7 +1327,7 @@ components:
           type: string
           format: uri
       required:
-      - file
+        - file
     ServiceReport:
       type: object
       properties:
@@ -1382,21 +1361,21 @@ components:
         attachments:
           type: array
           items:
-            $ref: '#/components/schemas/ServiceAttachment'
+            $ref: "#/components/schemas/ServiceAttachment"
           readOnly: true
         payment:
           allOf:
-          - $ref: '#/components/schemas/Payment'
+            - $ref: "#/components/schemas/Payment"
           readOnly: true
       required:
-      - attachments
-      - completed_at
-      - final_amount
-      - id
-      - order_id
-      - payment
-      - technician_id
-      - work_done
+        - attachments
+        - completed_at
+        - final_amount
+        - id
+        - order_id
+        - payment
+        - technician_id
+        - work_done
     ServiceType:
       type: object
       properties:
@@ -1411,16 +1390,16 @@ components:
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
       required:
-      - id
-      - name
+        - id
+        - name
     StatusEnum:
       enum:
-      - new
-      - assigned
-      - in_progress
-      - job_done
-      - reviewed
-      - closed
+        - new
+        - assigned
+        - in_progress
+        - job_done
+        - reviewed
+        - closed
       type: string
       description: |-
         * `new` - New
@@ -1445,10 +1424,10 @@ components:
           type: string
           readOnly: true
       required:
-      - access
-      - password
-      - refresh
-      - username
+        - access
+        - password
+        - refresh
+        - username
     TokenRefresh:
       type: object
       properties:
@@ -1459,8 +1438,8 @@ components:
           type: string
           writeOnly: true
       required:
-      - access
-      - refresh
+        - access
+        - refresh
     User:
       type: object
       properties:
@@ -1469,7 +1448,8 @@ components:
           readOnly: true
         username:
           type: string
-          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+          description:
+            Required. 150 characters or fewer. Letters, digits and @/./+/-/_
             only.
           pattern: ^[\w.@+-]+$
           maxLength: 150
@@ -1486,25 +1466,25 @@ components:
           maxLength: 254
         role:
           allOf:
-          - $ref: '#/components/schemas/UserRoleEnum'
+            - $ref: "#/components/schemas/UserRoleEnum"
           readOnly: true
         phone:
           type: string
           maxLength: 20
         branch:
           allOf:
-          - $ref: '#/components/schemas/Branch'
+            - $ref: "#/components/schemas/Branch"
           readOnly: true
       required:
-      - branch
-      - id
-      - role
-      - username
+        - branch
+        - id
+        - role
+        - username
     UserRoleEnum:
       enum:
-      - admin
-      - technician
-      - manager
+        - admin
+        - technician
+        - manager
       type: string
       description: |-
         * `admin` - Admin
