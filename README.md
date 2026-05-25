@@ -8,6 +8,19 @@ A role-based web portal that digitises the full service workflow from order crea
 
 ---
 
+https://sejuksejuk-gwc7.onrender.com/
+
+### Test Accounts
+
+| Role       | Username  | Password      | Access                                   |
+| ---------- | --------- | ------------- | ---------------------------------------- |
+| Admin      | `admin`   | `admin1234`   | Full access — orders, KPI, AI assistant  |
+| Manager    | `manager` | `manager1234` | Orders (review/close), KPI, AI assistant |
+| Technician | `ali`     | `tech1234`    | Own assigned jobs only                   |
+| Technician | `john`    | `tech1234`    | Own assigned jobs only                   |
+| Technician | `bala`    | `tech1234`    | Own assigned jobs only                   |
+| Technician | `yusoff`  | `tech1234`    | Own assigned jobs only                   |
+
 ## Tech Stack
 
 | Layer              | Choice                              | Notes                                                                    |
