@@ -70,7 +70,7 @@ function UploadingFileIcon({ type }: { type: string }) {
   return <FileText className="size-5" />;
 }
 
-const MAX_FILES = 10;
+const MAX_FILES = 6;
 const MAX_SIZE_MB = 10;
 const MIN_UPLOAD_FEEDBACK_MS = 900;
 const UPLOAD_RESULT_FEEDBACK_MS = 700;

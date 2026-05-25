@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'cloudinary_storage',
     'cloudinary',
+    'django_extensions',
     # local apps
     'accounts',
     'orders',
