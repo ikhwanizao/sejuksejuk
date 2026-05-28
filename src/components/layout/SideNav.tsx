@@ -10,15 +10,15 @@ import { useAuthStore } from "@/stores/auth";
 import { cn } from "@/lib/utils";
 
 const adminLinks = [
+  { to: "/kpi", label: "Dashboard", icon: BarChart3 },
   { to: "/orders", label: "Orders", icon: ClipboardList },
   { to: "/orders/new", label: "New Order", icon: PlusCircle },
-  { to: "/kpi", label: "KPI", icon: BarChart3 },
   { to: "/ai", label: "Assistant", icon: Bot },
 ];
 
 const managerLinks = [
+  { to: "/kpi", label: "Dashboard", icon: BarChart3 },
   { to: "/orders", label: "Orders", icon: ClipboardList },
-  { to: "/kpi", label: "KPI", icon: BarChart3 },
   { to: "/ai", label: "Assistant", icon: Bot },
 ];
 
