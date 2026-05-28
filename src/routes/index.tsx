@@ -32,7 +32,7 @@ function RoleRedirect() {
   const user = useAuthStore((s) => s.user);
   if (!user) return <Navigate to="/login" replace />;
   if (user.role === "technician") return <Navigate to="/jobs" replace />;
-  return <Navigate to="/orders" replace />;
+  return <Navigate to="/kpi" replace />;
 }
 
 export default function AppRoutes() {
