@@ -1,6 +1,5 @@
 from datetime import date, timedelta
-from django.db.models import Count, Sum, Avg, Q
-from django.db.models.functions import TruncDate
+from django.db.models import Count, Sum
 from orders.models import Order, OrderEvent
 
 
@@ -21,14 +20,15 @@ def _date_range(period: str, start=None, end=None):
     return start, end
 
 
-def technician_stats(period="week", start=None, end=None):
+def technician_stats(period="week", start=None, end=None, *, orders=None):
     start, end = _date_range(period, start, end)
+    orders = Order.objects.all() if orders is None else orders
 
     jobs = (
-        Order.objects.filter(
+        orders.filter(
             status__in=["job_done", "reviewed", "closed"],
-            updated_at__date__gte=start,
-            updated_at__date__lte=end,
+            report__completed_at__date__gte=start,
+            report__completed_at__date__lte=end,
             assigned_technician__isnull=False,
         )
         .values("assigned_technician__id", "assigned_technician__username",
@@ -42,6 +42,7 @@ def technician_stats(period="week", start=None, end=None):
 
     reschedules = (
         OrderEvent.objects.filter(
+            order__in=orders,
             event_type=OrderEvent.EventType.RESCHEDULE,
             at__date__gte=start,
             at__date__lte=end,
@@ -66,12 +67,13 @@ def technician_stats(period="week", start=None, end=None):
     return result, str(start), str(end)
 
 
-def team_summary(period="week", start=None, end=None):
+def team_summary(period="week", start=None, end=None, *, orders=None):
     start, end = _date_range(period, start, end)
-    agg = Order.objects.filter(
+    orders = Order.objects.all() if orders is None else orders
+    agg = orders.filter(
         status__in=["job_done", "reviewed", "closed"],
-        updated_at__date__gte=start,
-        updated_at__date__lte=end,
+        report__completed_at__date__gte=start,
+        report__completed_at__date__lte=end,
     ).aggregate(
         total_jobs=Count("id"),
         total_amount=Sum("report__final_amount"),

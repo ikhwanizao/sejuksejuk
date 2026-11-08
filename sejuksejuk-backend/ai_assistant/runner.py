@@ -31,7 +31,7 @@ llm = get_provider()
 memory = MemorySaver()
 agent = create_react_agent(llm, tools=TOOLS, prompt=SYSTEM_PROMPT, checkpointer=memory)
 
-def run_query(question: str, conversation_id: int) -> dict:
+def run_query(question: str, conversation_id: int, *, user) -> dict:
     """
     Run a user query through the compiled ReAct agent utilizing persistent state checkpoints.
     
@@ -41,7 +41,10 @@ def run_query(question: str, conversation_id: int) -> dict:
     """
     # 2. Scope the thread state explicitly using the conversation database ID
     config = {
-        "configurable": {"thread_id": str(conversation_id)},
+        "configurable": {
+            "thread_id": f"{user.pk}:{user.role}:{user.branch_id}:{conversation_id}",
+            "user_id": user.pk,
+        },
         "recursion_limit": MAX_TOOL_ITERATIONS * 2 + 2,
     }
 

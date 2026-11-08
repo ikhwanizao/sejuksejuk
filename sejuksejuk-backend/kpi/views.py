@@ -5,6 +5,7 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter, inline_serial
 from rest_framework import serializers as s
 
 from accounts.permissions import IsManagerOrAdmin
+from orders.access import visible_orders
 from .aggregations import technician_stats, team_summary
 
 _PERIOD_PARAM = OpenApiParameter("period", str, description="week | month | today")
@@ -31,7 +32,9 @@ class TechnicianKPIView(APIView):
         period = request.query_params.get("period", "week")
         start = request.query_params.get("start")
         end = request.query_params.get("end")
-        stats, start_str, end_str = technician_stats(period, start, end)
+        stats, start_str, end_str = technician_stats(
+            period, start, end, orders=visible_orders(request.user)
+        )
         return Response({"period": period, "start": start_str, "end": end_str, "technicians": stats})
 
 
@@ -46,7 +49,7 @@ class SummaryKPIView(APIView):
         period = request.query_params.get("period", "week")
         start = request.query_params.get("start")
         end = request.query_params.get("end")
-        return Response(team_summary(period, start, end))
+        return Response(team_summary(period, start, end, orders=visible_orders(request.user)))
 
 
 class LeaderboardKPIView(APIView):
@@ -62,7 +65,9 @@ class LeaderboardKPIView(APIView):
         metric = request.query_params.get("metric", "jobs")
         start = request.query_params.get("start")
         end = request.query_params.get("end")
-        stats, start_str, end_str = technician_stats(period, start, end)
+        stats, start_str, end_str = technician_stats(
+            period, start, end, orders=visible_orders(request.user)
+        )
         sort_key = "jobs_completed" if metric == "jobs" else "total_amount"
         ranked = sorted(stats, key=lambda r: r[sort_key], reverse=True)
         for i, row in enumerate(ranked, start=1):
