@@ -48,7 +48,7 @@ class PaymentSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "captured_at"]
 
     def validate_amount(self, amount):
-        if amount < 0:
+        if amount <= 0:
             raise serializers.ValidationError("Amount cannot be less 0")
         return amount
 
