@@ -15,6 +15,7 @@ import {
   Film,
 } from "lucide-react";
 import { useOrder, useCompleteOrder } from "@/api/orders";
+import { completionStep } from "@/lib/jobCompletion";
 import {
   useReport,
   useUploadAttachment,
@@ -88,14 +89,19 @@ export default function CompleteJobPage() {
   const navigate = useNavigate();
   const orderId = Number(id);
 
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [selectedStep, setStep] = useState<2 | 3 | null>(null);
   const [done, setDone] = useState(false);
   const [paymentReceipt, setPaymentReceipt] = useState<File | null>(null);
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
 
   const { data: order, isLoading, isError } = useOrder(id);
-  const { data: report } = useReport(id);
-  const { data: notifications } = useOrderNotifications(done ? id : undefined);
+  const {
+    data: report, isLoading: reportLoading, isFetching: reportFetching,
+    isError: reportError, refetch: refetchReport,
+  } = useReport(id);
+  const step = completionStep(report, selectedStep);
+  const isDone = done || (!!report?.payment && !!report.attachments.length);
+  const { data: notifications } = useOrderNotifications(isDone ? id : undefined);
 
   const reportId = report?.id ?? 0;
   const completeOrder = useCompleteOrder(orderId);
@@ -128,7 +134,9 @@ export default function CompleteJobPage() {
 
   const extraCharges = parseFloat(extraChargesRaw || "0") || 0;
   const quotedPrice = parseFloat(order?.quoted_price ?? "0");
-  const finalAmount = quotedPrice + extraCharges;
+  const finalAmount = report
+    ? parseFloat(report.final_amount)
+    : quotedPrice + extraCharges;
 
   const attachments = report?.attachments ?? [];
   const isUploadingAttachments = uploadingFiles.some(
@@ -152,10 +160,15 @@ export default function CompleteJobPage() {
     };
   }, []);
 
-  if (isLoading) return <PageSkeleton rows={3} />;
+  if (isLoading || reportLoading) return <PageSkeleton rows={3} />;
   if (isError || !order) return <ErrorState />;
-  if (order.status !== "in_progress" && step === 1 && !done) {
-    return <ErrorState message="This job is not currently in progress." />;
+  if (reportError) return <ErrorState onRetry={() => refetchReport()} />;
+  if (order.status === "job_done" && !report) {
+    if (reportFetching) return <PageSkeleton rows={3} />;
+    return <ErrorState message="Unable to load the service report." onRetry={() => refetchReport()} />;
+  }
+  if (!["in_progress", "job_done"].includes(order.status) && !isDone) {
+    return <ErrorState message="This job can no longer be completed." />;
   }
 
   // ── Step 1: Submit work ──────────────────────────────────────────────────
@@ -300,7 +313,7 @@ export default function CompleteJobPage() {
   }
 
   // ── Done screen ──────────────────────────────────────────────────────────
-  if (done) {
+  if (isDone) {
     const customerNotif = notifications?.find(
       (n) => n.recipient_type === "customer",
     );
@@ -481,6 +494,7 @@ export default function CompleteJobPage() {
                   <button
                     type="button"
                     onClick={() => handleDeleteAttachment(att.id)}
+                    disabled={isUploadingAttachments || deleteAttachment.isPending}
                     className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground rounded-full size-5 flex items-center justify-center"
                   >
                     <X className="size-3" />
@@ -569,13 +583,13 @@ export default function CompleteJobPage() {
               <Button
                 variant="outline"
                 className="flex-1"
-                onClick={() => setStep(1)}
+                onClick={() => navigate(`/jobs/${id}`)}
               >
                 Back
               </Button>
               <Button
                 className="flex-1"
-                disabled={attachments.length === 0}
+                disabled={attachments.length === 0 || isUploadingAttachments || deleteAttachment.isPending}
                 onClick={() => {
                   if (attachments.length === 0) {
                     toast.error("Please add at least one photo");
@@ -584,7 +598,7 @@ export default function CompleteJobPage() {
                   setStep(3);
                 }}
               >
-                Next: Payment
+                {report?.payment ? "Finish" : "Next: Payment"}
               </Button>
             </div>
           </CardContent>
