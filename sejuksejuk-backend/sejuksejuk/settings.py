@@ -7,6 +7,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config("SECRET_KEY", default="django-insecure-change-me")
 DEBUG = config("DEBUG", default=True, cast=bool)
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    CSRF_TRUSTED_ORIGINS = ["https://api.yourdomain.com"]
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="127.0.0.1,localhost", cast=Csv())
 
 
@@ -207,3 +213,27 @@ else:
 
 WHITENOISE_MANIFEST_STRICT = False
 WHITENOISE_MAX_WORKERS = 1
+
+USE_S3 = config("USE_S3", default=False, cast=bool)
+
+if USE_S3:
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3.S3Storage",
+            "OPTIONS": {
+                "bucket_name": config("AWS_STORAGE_BUCKET_NAME"),
+                "region_name": config(
+                    "AWS_S3_REGION_NAME",
+                    default="ap-southeast-1",
+                ),
+                "default_acl": None,
+                "querystring_auth": True,
+                "querystring_expire": 3600,
+                "file_overwrite": False,
+                "location": "media",
+            },
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+        },
+    }
