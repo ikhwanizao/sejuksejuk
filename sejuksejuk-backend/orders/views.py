@@ -1,5 +1,5 @@
 from django.db import transaction
-from rest_framework import viewsets, status
+from rest_framework import mixins, viewsets, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
@@ -9,6 +9,7 @@ from accounts.permissions import IsAdmin, IsManagerOrAdmin, IsAssignedTechnician
 from audit.utils import record_action
 from notifications.services import NotificationService
 from .filters import OrderFilter
+from .access import visible_orders
 from .models import Order, OrderEvent, ServiceType
 from .serializers import (
     AssignSerializer,
@@ -27,7 +28,13 @@ class ServiceTypeViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
 
 
-class OrderViewSet(viewsets.ModelViewSet):
+class OrderViewSet(
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet,
+):
     permission_classes = [IsAuthenticated]
     filterset_class = OrderFilter
     search_fields = ["order_no", "customer_name", "customer_phone"]
@@ -38,15 +45,10 @@ class OrderViewSet(viewsets.ModelViewSet):
         # Guard for drf-spectacular schema introspection
         if getattr(self, "swagger_fake_view", False):
             return Order.objects.none()
-        user = self.request.user
         qs = Order.objects.select_related(
             "service_type", "assigned_technician", "created_by"
         ).prefetch_related("events__actor")
-        if user.role == "technician":
-            return qs.filter(assigned_technician=user)
-        if user.role == "manager" and user.branch:
-            return qs.filter(created_by__branch=user.branch)
-        return qs
+        return visible_orders(self.request.user, qs)
 
     def get_serializer_class(self):
         if self.action == "create":
