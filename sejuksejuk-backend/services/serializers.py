@@ -47,6 +47,11 @@ class PaymentSerializer(serializers.ModelSerializer):
         fields = ["id", "amount", "method", "receipt_photo", "captured_at"]
         read_only_fields = ["id", "captured_at"]
 
+        def validate_amout(self, amount):
+            if amount < 0:
+                raise serializers.ValidationError("Amount cannot be less 0")
+            return amount
+
 
 class ServiceReportSerializer(serializers.ModelSerializer):
     attachments = ServiceAttachmentSerializer(many=True, read_only=True)
