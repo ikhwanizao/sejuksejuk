@@ -25,7 +25,7 @@ export function useCreatePayment(reportId: number, orderId: number) {
         .then((r) => r.data);
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["report", orderId] });
+      qc.invalidateQueries({ queryKey: ["report", String(orderId)] });
     },
   });
 }

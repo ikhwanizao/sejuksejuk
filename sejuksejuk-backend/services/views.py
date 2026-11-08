@@ -11,6 +11,7 @@ from accounts.permissions import IsAssignedTechnician, IsManagerOrAdmin
 from audit.utils import record_action
 from notifications.services import NotificationService
 from orders.models import Order, OrderEvent
+from orders.access import visible_orders
 from orders.serializers import OrderDetailSerializer
 from orders.state import validate_transition
 
@@ -82,7 +83,7 @@ class ReportDetailView(APIView):
 
     @extend_schema(responses=ServiceReportSerializer)
     def get(self, request, order_pk):
-        order = get_object_or_404(Order, pk=order_pk)
+        order = get_object_or_404(visible_orders(request.user), pk=order_pk)
         report = get_object_or_404(ServiceReport, order=order)
         return Response(ServiceReportSerializer(report, context={"request": request}).data)
 
@@ -92,7 +93,10 @@ class AttachmentListCreateView(APIView):
 
     @extend_schema(responses=ServiceAttachmentSerializer(many=True))
     def get(self, request, report_pk):
-        report = get_object_or_404(ServiceReport, pk=report_pk)
+        report = get_object_or_404(
+            ServiceReport.objects.filter(order__in=visible_orders(request.user)),
+            pk=report_pk,
+        )
         return Response(
             ServiceAttachmentSerializer(
                 report.attachments.all(), many=True, context={"request": request}

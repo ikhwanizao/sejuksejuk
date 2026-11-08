@@ -2,14 +2,28 @@
 Registry of safe, read-only ORM tools exposed to the AI assistant.
 
 Each function returns plain Python data (dicts/lists) -- no ORM objects.
-The AI never sees raw SQL; all queries are scoped to completed/reviewed/closed
-orders only unless status is specified explicitly.
+The AI never sees raw SQL. Every query is scoped to the authenticated caller's
+visible orders, using server-injected configuration rather than model arguments.
 """
 from datetime import date, timedelta
 from typing import Literal, Optional
 
-from django.db.models import Count, Sum
+from django.db.models import Count, Sum, Q
 from langchain_core.tools import tool
+from langchain_core.runnables import RunnableConfig
+from orders.access import visible_orders
+
+
+def _orders(config: RunnableConfig):
+    """Resolve authorization from server-injected config, never model arguments."""
+    from accounts.models import User
+    from orders.models import Order
+
+    user_id = config.get("configurable", {}).get("user_id")
+    user = User.objects.filter(pk=user_id, is_active=True).first()
+    if user is None or user.role not in ("admin", "manager"):
+        return Order.objects.none()
+    return visible_orders(user)
 
 
 # -- Date helpers --------------------------------------------------------------
@@ -30,6 +44,7 @@ def _period_range(period: str):
 
 @tool
 def list_jobs_by_technician(
+    config: RunnableConfig,
     technician_name: str = "",
     period: Literal["today", "week", "month"] = "week",
     start_date: Optional[str] = None,
@@ -43,7 +58,6 @@ def list_jobs_by_technician(
         start_date: Start date in ISO format YYYY-MM-DD.
         end_date: End date in ISO format YYYY-MM-DD.
     """
-    from orders.models import Order
     from accounts.models import User
 
     if start_date and end_date:
@@ -51,7 +65,10 @@ def list_jobs_by_technician(
     else:
         start, end = _period_range(period)
 
-    techs = User.objects.filter(role="technician")
+    visible = _orders(config)
+    techs = User.objects.filter(
+        role="technician", pk__in=visible.values("assigned_technician_id")
+    )
     if technician_name:
         techs = techs.filter(
             username__icontains=technician_name
@@ -60,12 +77,12 @@ def list_jobs_by_technician(
         return {"error": f"No technician matching '{technician_name}' found."}
 
     tech = techs.first()
-    orders = Order.objects.filter(
+    orders = visible.filter(
         assigned_technician=tech,
         status__in=["job_done", "reviewed", "closed"],
-        updated_at__date__gte=start,
-        updated_at__date__lte=end,
-    ).select_related("service_type")
+        report__completed_at__date__gte=start,
+        report__completed_at__date__lte=end,
+    ).select_related("service_type", "report")
 
     jobs = [
         {
@@ -74,7 +91,7 @@ def list_jobs_by_technician(
             "service": o.service_type.name if o.service_type else "--",
             "status": o.status,
             "final_amount": float(getattr(getattr(o, "report", None), "final_amount", 0) or 0),
-            "completed_at": str(o.updated_at.date()),
+            "completed_at": str(o.report.completed_at.date()),
         }
         for o in orders
     ]
@@ -88,6 +105,7 @@ def list_jobs_by_technician(
 
 @tool
 def count_jobs(
+    config: RunnableConfig,
     period: Literal["today", "week", "month"],
     status: Optional[Literal["new", "assigned", "in_progress", "job_done", "reviewed", "closed"]] = None,
 ) -> dict:
@@ -97,17 +115,22 @@ def count_jobs(
         period: Relative period -- today, week, or month.
         status: Optional order status to filter by.
     """
-    from orders.models import Order
-
     start, end = _period_range(period)
-    qs = Order.objects.filter(updated_at__date__gte=start, updated_at__date__lte=end)
+    qs = _orders(config)
     if status:
         qs = qs.filter(status=status)
+    # Completed work belongs to its completion period. Open work uses creation.
+    completed = Q(status__in=["job_done", "reviewed", "closed"])
+    qs = qs.filter(
+        (completed & Q(report__completed_at__date__range=(start, end)))
+        | (~completed & Q(created_at__date__range=(start, end)))
+    )
     return {"period": f"{start} to {end}", "status_filter": status or "all", "count": qs.count()}
 
 
 @tool
 def top_technicians(
+    config: RunnableConfig,
     period: Literal["today", "week", "month"],
     by: Literal["jobs", "amount"] = "jobs",
     limit: int = 5,
@@ -119,14 +142,12 @@ def top_technicians(
         by: Rank by number of jobs completed or by total revenue amount.
         limit: Maximum number of technicians to return.
     """
-    from orders.models import Order
-
     start, end = _period_range(period)
     rows = (
-        Order.objects.filter(
+        _orders(config).filter(
             status__in=["job_done", "reviewed", "closed"],
-            updated_at__date__gte=start,
-            updated_at__date__lte=end,
+            report__completed_at__date__gte=start,
+            report__completed_at__date__lte=end,
             assigned_technician__isnull=False,
         )
         .values(
@@ -151,7 +172,7 @@ def top_technicians(
 
 
 @tool
-def get_order_summary(order_no: str) -> dict:
+def get_order_summary(order_no: str, config: RunnableConfig) -> dict:
     """Retrieve details of a specific order by order number (e.g. ORD123456).
 
     Args:
@@ -160,7 +181,7 @@ def get_order_summary(order_no: str) -> dict:
     from orders.models import Order
 
     try:
-        o = Order.objects.select_related(
+        o = _orders(config).select_related(
             "service_type", "assigned_technician", "created_by"
         ).get(order_no=order_no.strip().upper())
     except Order.DoesNotExist:
@@ -189,7 +210,7 @@ def get_order_summary(order_no: str) -> dict:
 
 
 @tool
-def technician_workload(period: Literal["today", "week", "month"]) -> dict:
+def technician_workload(period: Literal["today", "week", "month"], config: RunnableConfig) -> dict:
     """Show each technician's job count and total amount for the given period.
 
     Args:
@@ -197,7 +218,7 @@ def technician_workload(period: Literal["today", "week", "month"]) -> dict:
     """
     from kpi.aggregations import technician_stats
 
-    stats, start, end = technician_stats(period)
+    stats, start, end = technician_stats(period, orders=_orders(config))
     return {"period": f"{start} to {end}", "technicians": stats}
 
 

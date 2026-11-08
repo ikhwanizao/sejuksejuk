@@ -174,6 +174,15 @@ export default function JobDetailPage() {
             </Link>
           </Button>
         )}
+        {order.status === "job_done" && report &&
+          (report.attachments.length === 0 || !report.payment) && (
+            <Button size="lg" className="w-full" asChild>
+              <Link to={`/jobs/${id}/complete`}>
+                <ClipboardCheck className="mr-2 size-5" />
+                Add Photos / Payment
+              </Link>
+            </Button>
+          )}
       </div>
     </div>
   );

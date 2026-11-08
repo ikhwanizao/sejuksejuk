@@ -59,7 +59,7 @@ class AIQueryView(APIView):
             .values("role", "content")[:10]
         )[::-1]
 
-        result = run_query(question, conversation_id=conversation.pk)
+        result = run_query(question, conversation_id=conversation.pk, user=request.user)
 
         Message.objects.create(conversation=conversation, role="user", content=question)
         Message.objects.create(
