@@ -23,6 +23,7 @@ from decimal import Decimal
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.utils import timezone as django_timezone
 
 from accounts.models import Branch, User
 from orders.models import Order, OrderEvent, ServiceType
@@ -165,10 +166,10 @@ class Command(BaseCommand):
 
         # ── 2. Users ───────────────────────────────────────────────────────
         for data in SEED_USERS:
-            password = data.pop("password")
+            password = data["password"]
             user, created = User.objects.get_or_create(
                 username=data["username"],
-                defaults={**data, "branch": branch},
+                defaults={**{k: v for k, v in data.items() if k != "password"}, "branch": branch},
             )
             if created:
                 user.set_password(password)
@@ -176,10 +177,14 @@ class Command(BaseCommand):
                 self.stdout.write(f"  Created user: {user.username}")
             else:
                 self.stdout.write(f"  Exists user:  {user.username}")
-            data["password"] = password  # restore for idempotency
 
         admin_user   = User.objects.get(username="admin")
-        technicians  = list(User.objects.filter(role="technician"))
+        technicians  = list(User.objects.filter(
+            username__in=[u["username"] for u in SEED_USERS if u["role"] == "technician"],
+            role="technician",
+        ).order_by("username"))
+        if not technicians:
+            raise ValueError("No demo technicians available; check existing demo user roles.")
 
         # ── 3. Service types ───────────────────────────────────────────────
         svc_objs = []
@@ -192,7 +197,7 @@ class Command(BaseCommand):
                 self.stdout.write(f"  Created service type: {name}")
 
         # ── 4. Orders ──────────────────────────────────────────────────────
-        today       = date.today()
+        today       = django_timezone.localdate()
         rng         = random.Random(42)   # deterministic seed
 
         # Define date buckets so KPI periods are well populated
@@ -265,11 +270,15 @@ class Command(BaseCommand):
             })
 
         created_count = 0
-        for spec in order_specs:
+        for index, spec in enumerate(order_specs, start=1):
+            order_no = f"DEMO{index:06d}"
+            if Order.objects.filter(order_no=order_no).exists():
+                continue
             order_date = days_ago(spec["age"])
             cust_name, cust_phone, cust_addr = spec["cust"]
 
             order = Order.objects.create(
+                order_no=order_no,
                 customer_name=cust_name,
                 customer_phone=cust_phone,
                 customer_address=cust_addr,
@@ -283,31 +292,37 @@ class Command(BaseCommand):
 
             # Back-date created_at and updated_at
             Order.objects.filter(pk=order.pk).update(
-                created_at=_dt(order_date, rng.randint(8, 11)),
-                updated_at=_dt(order_date, rng.randint(14, 17)),
+                created_at=_dt(order_date, 8),
+                updated_at=_dt(order_date, 18),
             )
 
             # OrderEvents for status trail
-            _add_event(order, OrderEvent.EventType.STATUS_CHANGE,
-                       "new", "assigned", admin_user,
-                       _dt(order_date, rng.randint(8, 10)))
+            if spec["status"] != "new":
+                _add_event(order, OrderEvent.EventType.STATUS_CHANGE,
+                           "new", "assigned", admin_user, _dt(order_date, 9))
 
             if spec["status"] not in ("new", "assigned"):
                 _add_event(order, OrderEvent.EventType.STATUS_CHANGE,
                            "assigned", "in_progress", spec["tech"] or admin_user,
-                           _dt(order_date, rng.randint(10, 12)))
+                           _dt(order_date, 10))
 
             # Reschedule event
             if spec["reschedule"]:
                 _add_event(order, OrderEvent.EventType.RESCHEDULE,
-                           spec["status"], spec["status"], spec["tech"] or admin_user,
-                           _dt(order_date, rng.randint(9, 13)))
+                           "in_progress", "in_progress", spec["tech"] or admin_user,
+                           _dt(order_date, 12))
 
             # ServiceReport + Payment for completed orders
             if spec["complete"]:
                 _add_event(order, OrderEvent.EventType.STATUS_CHANGE,
                            "in_progress", "job_done", spec["tech"],
-                           _dt(order_date, rng.randint(13, 16)))
+                           _dt(order_date, 14))
+                if spec["status"] in ("reviewed", "closed"):
+                    _add_event(order, OrderEvent.EventType.STATUS_CHANGE,
+                               "job_done", "reviewed", admin_user, _dt(order_date, 16))
+                if spec["status"] == "closed":
+                    _add_event(order, OrderEvent.EventType.STATUS_CHANGE,
+                               "reviewed", "closed", admin_user, _dt(order_date, 17))
 
                 report = ServiceReport.objects.create(
                     order=order,
@@ -318,33 +333,33 @@ class Command(BaseCommand):
                 )
                 # Back-date completed_at
                 ServiceReport.objects.filter(pk=report.pk).update(
-                    completed_at=_dt(order_date, rng.randint(14, 17))
+                    completed_at=_dt(order_date, 14)
                 )
 
-                Payment.objects.create(
+                payment = Payment.objects.create(
                     report=report,
                     amount=Decimal(str(spec["final"])),
                     method=rng.choice(PAYMENT_METHODS),
                 )
+                Payment.objects.filter(pk=payment.pk).update(captured_at=_dt(order_date, 15))
 
                 # Notification for completed order
-                Notification.objects.create(
+                notification = Notification.objects.create(
                     order=order,
                     channel="whatsapp",
                     recipient_type="customer",
                     recipient_phone=cust_phone,
                     message=f"Dear {cust_name}, your service is complete. Amount: RM {spec['final']:.2f}. Thank you!",
                     deep_link_url=f"https://wa.me/60{cust_phone.lstrip('0')}",
-                    notification_status="sent",
+                    notification_status="generated",
                 )
+                Notification.objects.filter(pk=notification.pk).update(created_at=_dt(order_date, 15))
 
             created_count += 1
 
         self.stdout.write(self.style.SUCCESS(
-            f"\nDone! Created {created_count} orders "
-            f"({sum(1 for s in order_specs if s['complete'])} completed, "
-            f"{sum(1 for s in order_specs if not s['complete'] and s['status'] != 'new')} in-progress/assigned, "
-            f"{sum(1 for s in order_specs if s['status'] == 'new')} new)"
+            f"\nDone! Created {created_count} orders; "
+            f"skipped {len(order_specs) - created_count} existing demo orders."
         ))
         self.stdout.write(self.style.SUCCESS(
             "Login credentials:\n"
