@@ -12,7 +12,7 @@ if not DEBUG:
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
-    CSRF_TRUSTED_ORIGINS = ["https://api.yourdomain.com"]
+    CSRF_TRUSTED_ORIGINS = ["https://sejuk-api.ikhwanzao.com"]
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="127.0.0.1,localhost", cast=Csv())
 
 
