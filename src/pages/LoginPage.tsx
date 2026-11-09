@@ -26,6 +26,12 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
+const demoAccounts = [
+  { role: "Admin", username: "admin", password: "admin1234" },
+  { role: "Manager", username: "manager", password: "manager1234" },
+  { role: "Technician", username: "ali", password: "tech1234" },
+];
+
 export default function LoginPage() {
   "use no memo";
   const navigate = useNavigate();
@@ -35,6 +41,8 @@ export default function LoginPage() {
   const {
     register,
     handleSubmit,
+    setValue,
+    setFocus,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({ resolver: zodResolver(schema) });
 
@@ -99,6 +107,48 @@ export default function LoginPage() {
               {isSubmitting ? "Signing in…" : "Sign in"}
             </Button>
           </form>
+          <details className="mt-6 rounded-lg border bg-muted/30 p-3">
+            <summary className="cursor-pointer rounded-sm text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+              Demo accounts
+            </summary>
+            <div className="mt-3 space-y-3">
+              <p className="text-xs text-muted-foreground">
+                Choose a role to fill the login details, then select Sign in.
+              </p>
+              <div className="space-y-2">
+                {demoAccounts.map((account) => (
+                  <Button
+                    key={account.role}
+                    type="button"
+                    variant="outline"
+                    className="h-auto w-full items-start justify-between gap-2 whitespace-normal py-2 text-left"
+                    disabled={isSubmitting}
+                    aria-label={`Fill ${account.role.toLowerCase()} demo credentials`}
+                    onClick={() => {
+                      setValue("username", account.username, {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      });
+                      setValue("password", account.password, {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      });
+                      setFocus("username");
+                    }}
+                  >
+                    <span>{account.role}</span>
+                    <span className="text-right font-mono text-xs text-muted-foreground">
+                      <span className="block">{account.username}</span>
+                      <span className="block">{account.password}</span>
+                    </span>
+                  </Button>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Shared demo environment. Please use fictional information.
+              </p>
+            </div>
+          </details>
         </CardContent>
       </Card>
     </div>
